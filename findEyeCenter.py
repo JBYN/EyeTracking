@@ -2,6 +2,9 @@
 #https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
 
+def detect_eyeCenter(parameters):
+    return detect_2eyesOf1person(parameters)
+
 #Detecting the 2 eyes on an image of a person using haarcascades.
 #When the 2 eyes are detected, the region where they are detected are returned.
 #Otherwise the value None will be returned
@@ -10,8 +13,12 @@ import cv2
 #@param b:
 #@param img: the image where the eyes has to be detect on
 #@return: [right eye, left eye]
-def detect_2eyesOf1person(face_cascade,eye_cascade,b,img):
+def detect_2eyesOf1person(parameters):
     two_eyes = False #Not 2 eyes detected yet       
+    face_cascade = parameters[0]
+    eye_cascade = parameters[1]
+    b = parameters[2]
+    img = parameters[3]
     
     #to make it possible to detect faces the capture has to be in grayscale. 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -54,7 +61,6 @@ def detect_2eyesOf1person(face_cascade,eye_cascade,b,img):
         
     return None
     
-
 def findEyes(eye_cascade, img):
     #looking for eyes in the region where the faces are detected
     eyes = eye_cascade.detectMultiScale(img)
@@ -74,36 +80,24 @@ def findEyes(eye_cascade, img):
     return None
 
 def check4LeftAndRightEye(eyes):
-    #Constants for indicator
-#    eye_color_R = (0,0,255) #Red
-#    eye_color_L = (255,0,0) #Blue
-#    eye_stroke = 2
-    
     eye_1 = eyes[0]
     eye_2 = eyes[1]
+    
     if eye_1[0] < eye_2[0] and eye_1[3] < eye_2[0]:
-        #right eye
         rightEye = eye_1
         leftEye = eye_2
         return [leftEye,rightEye]
-#        ind_r = cv2.rectangle(roi_color, (eye_1[0], eye_1[1]), (eye_1[0] + eye_1[3], eye_1[1] + eye_1[2]), eye_color_R, eye_stroke)
-#        right_eye = roi_color[eye_1[1]:eye_1[1]+eye_1[2], eye_1[0]:eye_1[0]+eye_1[3]]
-        #left eye
-#        ind_l = cv2.rectangle(roi_color, (eye_2[0], eye_2[1]), (eye_2[0] + eye_2[3], eye_2[1] + eye_2[2]), eye_color_L, eye_stroke)
-#        left_eye = roi_color[eye_2[1]:eye_2[1]+eye_2[2], eye_2[0]:eye_2[0]+eye_2[3]]
     elif eye_2[0] < eye_1[0] and eye_2[3] < eye_1[0]:
         rightEye = eye_2
         leftEye = eye_1
         return [leftEye,rightEye]
-        #right eye
-#        ind_r = cv2.rectangle(roi_color, (eye_2[0], eye_2[1]), (eye_2[0] + eye_2[3], eye_2[1] + eye_2[2]), eye_color_R, eye_stroke)
-#        right_eye = roi_color[eye_2[1]:eye_2[1]+eye_2[2], eye_2[0]:eye_2[0]+eye_2[3]]
-#        #left eye
-#        ind_l = cv2.rectangle(roi_color, (eye_1[0], eye_1[1]), (eye_1[0] + eye_1[3], eye_1[1] + eye_1[2]), eye_color_L, eye_stroke)
-#        left_eye = roi_color[eye_1[1]:eye_1[1]+eye_1[2], eye_1[0]:eye_1[0]+eye_1[3]]
     else:
         return None
-    
+
+
+
+
+
 ###############################################################################
 #Old method to detect the eyecenter
 ###############################################################################

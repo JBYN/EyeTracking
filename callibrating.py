@@ -7,7 +7,7 @@ Created on Wed Jan 23 14:39:50 2019
 
 import cv2
 import numpy as np
-import functions as detect
+import findEyeCenter as detect
 import statistics as stat
 
 CALLIBRATING_DATA = 10
@@ -35,9 +35,9 @@ def callibrate():
     
     while True:
         b,img = cam.read() #open the camera
-        eyes = detect.detect_2eyesOf1person(face_cascade,eye_cascade,b,img) #detecting eyes
-        
-        if callibrate_dataCollection(eyes): 
+        #eyes = detect.detect_2eyesOf1person(face_cascade,eye_cascade,b,img) #detecting eyes
+        parameters = [face_cascade,eye_cascade,b,img]
+        if callibrate_dataCollection(parameters): 
             break
  
         cv2.waitKey(1)&0xff
@@ -49,11 +49,11 @@ def callibrate():
 #Adding the different callibration data to the proper lists
 #@param eyes: the regions where the eyes can be found. [region of the right eye, region of the left eye]
 #@return: True: End of the collecting the data; False: Collecting the data is still going on
-def callibrate_dataCollection(eyes):
+def callibrate_dataCollection(parameters):
     callibrating_background = np.zeros((800,1600,3),np.uint8)+255 #White background
     
     if len(middle[0]) < CALLIBRATING_DATA :
-        results_middle = callibrate_middle(callibrating_background,eyes)
+        results_middle = callibrate_middle(callibrating_background,parameters)
         if results_middle != None:
             if results_middle[0] != None:
                 print("Middle: " + str(len(middle[0])))
@@ -64,7 +64,7 @@ def callibrate_dataCollection(eyes):
                 middle[1].append(results_middle[1][1])
     elif len(left[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Middle")    
-        results_left = callibrate_left(callibrating_background,eyes)
+        results_left = callibrate_left(callibrating_background,parameters)
         if results_left != None:
             if results_left[0] != None:
                 print("Left: " + str(len(left[0])))
@@ -75,7 +75,7 @@ def callibrate_dataCollection(eyes):
                 left[1].append(results_left[1][1])
     elif len(right[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Left")
-        results_right = callibrate_right(callibrating_background,eyes)
+        results_right = callibrate_right(callibrating_background,parameters)
         if results_right != None:
             if results_right[0] != None:
                 print("Right: " + str(len(right[0])))
@@ -95,45 +95,45 @@ def callibrate_dataCollection(eyes):
 #@param callibrating_screen: the background of the screen
 #@param eyes: the regions where the eyes can be found. [region of the right eye, region of the left eye]
 #@return: [ x and y value of the center of the right eye (x,y), x ana y value of the center of the left eye (x,y)]        
-def callibrate_middle(callibrating_screen,eyes):
+def callibrate_middle(callibrating_screen,parameters):
     x = int(callibrating_screen.shape[1]/2)
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y,"Middle")
     
     #detecting eye pupils
-    if eyes != None:
-        return get_eyeCenters(eyes)
-    else: return None
+#    if eyes != None:
+    return get_eyeCenters(parameters)
+#    else: return None
 
 #Callibration for looking to the left of the screen.
 #Getting the center of the two eyes when they are looking to the left of the screen
 #@param callibrating_screen: the background of the screen
 #@param eyes: the regions where the eyes can be found. [region of the right eye, region of the left eye]
 #@return: [ x and y value of the center of the right eye (x,y), x ana y value of the center of the left eye (x,y)]        
-def callibrate_left(callibrating_screen, eyes):
+def callibrate_left(callibrating_screen, parameters):
     x = 10
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y, "Left") 
     
     #detecting eye pupils
-    if eyes != None:
-        return get_eyeCenters(eyes)
-    else: return None
+    #if eyes != None:
+    return get_eyeCenters(parameters)
+    #else: return None
 
 #Callibration for looking to the right of the screen.
 #Getting the center of the two eyes when they are looking to the right of the screen
 #@param callibrating_screen: the background of the screen
 #@param eyes: the regions where the eyes can be found. [region of the right eye, region of the left eye]
 #@return: [ x and y value of the center of the right eye (x,y), x ana y value of the center of the left eye (x,y)]        
-def callibrate_right(callibrating_screen,eyes):
+def callibrate_right(callibrating_screen,parameters):
     x = int(callibrating_screen.shape[1])-10
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y,"Right") 
     
     #detecting eye pupils
-    if eyes != None:
-        return get_eyeCenters(eyes)
-    else: return None
+    #if eyes != None:
+    return get_eyeCenters(parameters)
+    #else: return None
     
 #Showing a screen with a focus point to get callibrating values
 #@param callibrating_screen: the background of the screen
@@ -156,9 +156,7 @@ def get_callibrationResults(data):
     sigma = stat.sigma(data, mu)
     return [mu - sigma, mu + sigma]
 
-def get_eyeCenters(eyes):
-    leftEye_center = detect.detect_eyeCenter(eyes[0])
-    rightEye_center = detect.detect_eyeCenter(eyes[1])
-    return [leftEye_center,rightEye_center]
+def get_eyeCenters(parameters):
+    return detect.detect_eyeCenter(parameters)
     
 callibrate()

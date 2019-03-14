@@ -1,10 +1,8 @@
 #source
 #https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
-import numpy as np
-import functions as detect
+import findEyeCenter as detect
 import callibrating
-#import pickle
 
 #constants to show errors on the image
 font = cv2.FONT_ITALIC
