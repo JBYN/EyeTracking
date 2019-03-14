@@ -1,9 +1,15 @@
 #source
 #https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
+import numpy as np
+import findEyeCenter_functions as hf
 
 def detect_eyeCenter(parameters):
-    return detect_2eyesOf1person(parameters)
+    eyes = detect_2eyesOf1person(parameters)
+    
+    gradientX = hf.computeXGradient(eyes[0])
+    gradientY = hf.computeXGradient(np.transpose[0]) 
+    return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.
 #When the 2 eyes are detected, the region where they are detected are returned.
