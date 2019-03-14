@@ -4,11 +4,16 @@ import cv2
 import numpy as np
 import findEyeCenter_functions as hf
 
+GRADIENT_THRESHOLD = 50
+
 def detect_eyeCenter(parameters):
     eyes = detect_2eyesOf1person(parameters)
     
-    gradientX = hf.computeXGradient(eyes[0])
-    gradientY = hf.computeXGradient(np.transpose[0]) 
+    if eyes != None:
+        gradientX = hf.computeXGradient(eyes[0])
+        gradientY = hf.computeXGradient(np.transpose(eyes[0])) 
+        matrix = hf.matrixMagnitude(gradientX,gradientY)
+        hf.computeDynamicThreshold(matrix, GRADIENT_THRESHOLD)
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.

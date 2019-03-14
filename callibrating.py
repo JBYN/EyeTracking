@@ -153,7 +153,7 @@ def show_callibratingScreen(callibrating_screen,x,y,windowName):
 #@return: [low bound, high bound]
 def get_callibrationResults(data):
     mu = stat.mu(data)
-    sigma = stat.sigma(data, mu)
+    sigma = stat.sigma(data,mu)
     return [mu - sigma, mu + sigma]
 
 def get_eyeCenters(parameters):
