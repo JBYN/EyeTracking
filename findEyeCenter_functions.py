@@ -49,3 +49,38 @@ def normalizeMatrix(matrix,magnitudes,threshold):
             else:
                 matrix[y][x] = 0
     return matrix
+
+def get_weight(eye,weightBlurSize):
+    blur = cv2.GaussianBlur(eye,(weightBlurSize,weightBlurSize),0,0)
+    print("blur: " + str(blur))
+    weight = 255 - blur #inverted
+    print("weight: " + str(weight))
+    return weight
+
+def testPossibleCenters(weight, gradientX, gradientY):
+    rows = np.shape(weight)[0]
+    columns = np.shape(weight)[1]
+    results = np.zeros((rows,columns,3),np.uint8)
+    for y in range(0,rows):
+        for x in range(0,columns):
+            if gradientX[y][x][0] != 0 or gradientY[y][x][0] != 0:
+                results = testPossibleCentersFormula(x,y,weight, gradientX[y][x][0], gradientY[y][x][0], results)
+    return results
+
+def testPossibleCentersFormula(x, y, weight, gX, gY, output):
+    for cy in range(0, np.shape(output)[0]):
+        for cx in range(0,np.shape(output)[1]):
+            if x != cx or y != cy:
+                #vector from the possible center to the gradient origin
+                dx = x - cx
+                dy = y -cy
+                #normalize the distance
+                magnitude = np.sqrt(np.square(dx) + np.square(dy))
+                dx_norm = dx/magnitude
+                dy_norm = dy/magnitude
+                
+                dotProduct = dx_norm*gX + dy_norm*gY
+                dotProduct = max(0,dotProduct)
+                #Square and multiply by the weight
+                output[cy][cx] += int(np.square(dotProduct))*weight[cy][cx]
+    return output

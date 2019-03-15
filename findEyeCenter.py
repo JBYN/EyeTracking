@@ -5,19 +5,30 @@ import numpy as np
 import findEyeCenter_functions as hf
 
 GRADIENT_THRESHOLD = 50
+BLUR_WEIGHT_SIZE = 5
 
 def detect_eyeCenter(parameters):
     eyes = detect_2eyesOf1person(parameters)
     
     if eyes != None:
-        for i in range(0,1):
+        for i in range(0,np.shape(eyes)[0]):
             gradientX = hf.computeXGradient(eyes[i])
             gradientY = hf.computeXGradient(np.transpose(eyes[i])) 
             magnitudes = hf.matrixMagnitude(gradientX,gradientY)
             threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
+            
             #Normalize gradientX and gradientY
             gradientX_norm = hf.normalizeMatrix(gradientX,magnitudes,threshold)
             gradientY_norm = hf.normalizeMatrix(gradientY,magnitudes,threshold)
+            
+            #get weight
+            weight = hf.get_weight(eyes[i],BLUR_WEIGHT_SIZE)
+            
+            #test the possible centers
+            hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm)
+            
+            print("WORKS FINE!")
+            cv2.lol
             
     return None
 
