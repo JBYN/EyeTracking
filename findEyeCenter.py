@@ -10,10 +10,15 @@ def detect_eyeCenter(parameters):
     eyes = detect_2eyesOf1person(parameters)
     
     if eyes != None:
-        gradientX = hf.computeXGradient(eyes[0])
-        gradientY = hf.computeXGradient(np.transpose(eyes[0])) 
-        matrix = hf.matrixMagnitude(gradientX,gradientY)
-        hf.computeDynamicThreshold(matrix, GRADIENT_THRESHOLD)
+        for i in range(0,1):
+            gradientX = hf.computeXGradient(eyes[i])
+            gradientY = hf.computeXGradient(np.transpose(eyes[i])) 
+            magnitudes = hf.matrixMagnitude(gradientX,gradientY)
+            threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
+            #Normalize gradientX and gradientY
+            gradientX_norm = hf.normalizeMatrix(gradientX,magnitudes,threshold)
+            gradientY_norm = hf.normalizeMatrix(gradientY,magnitudes,threshold)
+            
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.
