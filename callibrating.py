@@ -8,7 +8,6 @@ Created on Wed Jan 23 14:39:50 2019
 import cv2
 import numpy as np
 import findEyeCenter as detect
-import statistics as stat
 
 CALLIBRATING_DATA = 10
 
@@ -152,8 +151,8 @@ def show_callibratingScreen(callibrating_screen,x,y,windowName):
 #@param data: a list of data
 #@return: [low bound, high bound]
 def get_callibrationResults(data):
-    mu = stat.mu(data)
-    sigma = stat.sigma(data,mu)
+    mu = np.mean(data)
+    sigma = np.std(data,mu)
     return [mu - sigma, mu + sigma]
 
 def get_eyeCenters(parameters):

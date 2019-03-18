@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 import findEyeCenter_functions as hf
 
-GRADIENT_THRESHOLD = 50
+SMOOTH_FACTOR = 0.005
+GRADIENT_THRESHOLD = 0.3
 BLUR_WEIGHT_SIZE = 5
 
 def detect_eyeCenter(parameters):
@@ -13,7 +14,9 @@ def detect_eyeCenter(parameters):
     if eyes != None:
         for i in range(0,np.shape(eyes)[0]):
             gradientX = hf.computeXGradient(eyes[i])
-            gradientY = hf.computeXGradient(np.transpose(eyes[i])) 
+            gradientY = np.transpose(hf.computeXGradient(np.transpose(eyes[i])))
+            print("SHAPE_X: " + str(np.shape(gradientX)))
+            print("SHAPE_Y: " + str(np.shape(gradientY)))
             magnitudes = hf.matrixMagnitude(gradientX,gradientY)
             threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
             
@@ -27,8 +30,7 @@ def detect_eyeCenter(parameters):
             #test the possible centers
             hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm)
             
-            print("WORKS FINE!")
-            cv2.lol
+            cv2.end.WORKS_FINE
             
     return None
 
@@ -50,6 +52,7 @@ def detect_2eyesOf1person(parameters):
     #to make it possible to detect faces the capture has to be in grayscale. 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray,1.3,5,0|cv2.CASCADE_SCALE_IMAGE|cv2.CASCADE_FIND_BIGGEST_OBJECT)
+    
     if faces != ():
         print("FACE detected!")
         #getting the coördinates of the detected faces
@@ -57,6 +60,10 @@ def detect_2eyesOf1person(parameters):
             #print(x,y,w,h)
             roi_gray = gray[y:y+h, x:x+w] #pixels of the region of interest
             roi_color = img[y:y+h, x:x+w]
+            
+            #preprocessing
+            sigma = SMOOTH_FACTOR * w;
+            roi_gray = cv2.GaussianBlur(roi_gray, (0,0), sigma);        
             
             eyes = findEyes(eye_cascade, roi_gray)
             
