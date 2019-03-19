@@ -7,6 +7,7 @@ import findEyeCenter_functions as hf
 SMOOTH_FACTOR = 0.005
 GRADIENT_THRESHOLD = 0.3
 BLUR_WEIGHT_SIZE = 5
+POSTPROCESS_THRESHOLD = 0.9
 
 def detect_eyeCenter(parameters):
     eyes = detect_2eyesOf1person(parameters)
@@ -32,8 +33,18 @@ def detect_eyeCenter(parameters):
             centers = ((hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm))/numberGradients)
             _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
             
+            #postprocessing
+            #applying a threshold
+            floodThresh = maxVal*POSTPROCESS_THRESHOLD
+            floodClone = cv2.threshold(centers,floodThresh,0.0,cv2.THRESH_TOZERO)
+            #remove values connected to the borders
+            mask = hf.floodRemoveEdges(floodClone)
+            
+            _,maxVal,_,maxLoc = cv2.minMaxLoc(centers,mask)
+            
             cv2.end.WORKS_FINE
             
+#    return unscalePoint(maxLoc,eyes[])
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.
