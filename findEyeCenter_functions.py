@@ -22,15 +22,15 @@ def computeXGradient(img):
     
     return output
 
-def matrixMagnitude(matrix1, matrix2):
-    rows = np.shape(matrix1)[0]
-    columns = np.shape(matrix1)[1]
-    magnitudeMatrix = np.zeros((rows,columns),np.uint8)
+def gradientMagnitude(gradientX, gradientY):
+    rows = np.shape(gradientX)[0]
+    columns = np.shape(gradientY)[1]
+    gradientMagnitudes = np.zeros((rows,columns),np.uint8)
     
-    for y in range(0, rows):
-        for x in range(0, columns):
-            magnitudeMatrix[y][x]=magnitude(matrix1[y][x],matrix2[y][x])
-    return magnitudeMatrix
+    for y in range(0, rows-1):
+        for x in range(0, columns-1):
+            gradientMagnitudes[y][x]=magnitude(gradientX[y][x],gradientY[y][x])
+    return gradientMagnitudes
 
 def magnitude(value1, value2):
     return np.sqrt(np.square(value1)+np.square(value2))
@@ -40,16 +40,17 @@ def computeDynamicThreshold(data, deviationFactor):
     stdDev = sigma[0] / np.sqrt(np.shape(data)[0]*np.shape(data)[1])
     return deviationFactor*stdDev + mean[0]
     
-def normalizeMatrix(matrix,magnitudes,threshold):
-    for y in range(0,np.shape(matrix)[0]):
-        for x in range(0,np.shape(matrix)[1]):
-            gX = matrix[y][x]
+def normalizeGradient(gradient,magnitudes,threshold):
+    for y in range(0,np.shape(gradient)[0]):
+        for x in range(0,np.shape(gradient)[1]):
+            g = gradient[y][x]
             magnitude = magnitudes[y][x]
+            #considering only gradient vectors with a signifacnt magnitude
             if magnitude > threshold:
-                matrix[y][x] = gX/magnitude
+                gradient[y][x] = g/magnitude
             else:
-                matrix[y][x] = 0
-    return matrix
+                gradient[y][x] = 0
+    return gradient
 
 def get_weight(eye,weightBlurSize):
     blur = cv2.GaussianBlur(eye,(weightBlurSize,weightBlurSize),0,0)
@@ -62,16 +63,20 @@ def testPossibleCenters(weight, gradientX, gradientY):
     rows = np.shape(weight)[0]
     columns = np.shape(weight)[1]
     results = np.zeros((rows,columns),np.uint8)
+    print("PossibleCenters_BEGIN")
     for y in range(0,rows-1):
         for x in range(0,columns-1):
             if gradientX[y][x] != 0 or gradientY[y][x] != 0:
-                results = testPossibleCentersFormula(x,y,weight, gradientX[y][x], gradientY[y][x], results)
+                results = testPossibleCentersFormula(x,y,weight, [[gradientX[y][x], gradientY[y][x]]], results)
+    print("PossibleCenters_END")
     return results
 
-def testPossibleCentersFormula(x, y, weight, gX, gY, output):
+def testPossibleCentersFormula(x, y, weight, gradient_vector, output):
     for cy in range(0, np.shape(output)[0]):
         for cx in range(0,np.shape(output)[1]):
             if x != cx or y != cy:
+                
+                #displacement vector
                 #vector from the possible center to the gradient origin
                 dx = x - cx
                 dy = y -cy
@@ -79,8 +84,9 @@ def testPossibleCentersFormula(x, y, weight, gX, gY, output):
                 magnitude = np.sqrt(np.square(dx) + np.square(dy))
                 dx_norm = dx/magnitude
                 dy_norm = dy/magnitude
+                displacementVector = [[dx_norm],[dy_norm]]
                 
-                dotProduct = max(0,dx_norm*gX + dy_norm*gY)
+                dotProduct = max(0,np.dot(gradient_vector,displacementVector))
                 #Square and multiply by the weight
                 output[cy][cx] += int(np.square(dotProduct))*weight[cy][cx]
     return output

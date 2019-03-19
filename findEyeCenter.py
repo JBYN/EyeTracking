@@ -17,12 +17,12 @@ def detect_eyeCenter(parameters):
             gradientY = np.transpose(hf.computeXGradient(np.transpose(eyes[i])))
             print("SHAPE_X: " + str(np.shape(gradientX)))
             print("SHAPE_Y: " + str(np.shape(gradientY)))
-            magnitudes = hf.matrixMagnitude(gradientX,gradientY)
+            magnitudes = hf.gradientMagnitude(gradientX,gradientY)
             threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
             
             #Normalize gradientX and gradientY
-            gradientX_norm = hf.normalizeMatrix(gradientX,magnitudes,threshold)
-            gradientY_norm = hf.normalizeMatrix(gradientY,magnitudes,threshold)
+            gradientX_norm = hf.normalizeGradient(gradientX,magnitudes,threshold)
+            gradientY_norm = hf.normalizeGradient(gradientY,magnitudes,threshold)
             
             #get weight
             weight = hf.get_weight(eyes[i],BLUR_WEIGHT_SIZE)
