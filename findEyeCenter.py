@@ -28,7 +28,9 @@ def detect_eyeCenter(parameters):
             weight = hf.get_weight(eyes[i],BLUR_WEIGHT_SIZE)
             
             #test the possible centers
-            hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm)
+            numberGradients = np.square(np.shape(gradientX_norm)[0])
+            centers = ((hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm))/numberGradients)
+            _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
             
             cv2.end.WORKS_FINE
             

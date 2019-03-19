@@ -7,6 +7,7 @@ Created on Thu Mar 14 13:53:24 2019
 import cv2
 import numpy as np
 
+FAST_EYE_WIDTH = 50
 
 def computeXGradient(img):
     rows = np.shape(img)[0]
@@ -67,7 +68,7 @@ def testPossibleCenters(weight, gradientX, gradientY):
     for y in range(0,rows-1):
         for x in range(0,columns-1):
             if gradientX[y][x] != 0 or gradientY[y][x] != 0:
-                results = testPossibleCentersFormula(x,y,weight, [[gradientX[y][x], gradientY[y][x]]], results)
+                results = testPossibleCentersFormula(x,y,weight, [gradientX[y][x], gradientY[y][x]], results)
     print("PossibleCenters_END")
     return results
 
@@ -90,3 +91,18 @@ def testPossibleCentersFormula(x, y, weight, gradient_vector, output):
                 #Square and multiply by the weight
                 output[cy][cx] += int(np.square(dotProduct))*weight[cy][cx]
     return output
+
+
+#def floodRemoveEdges(centers):
+#    rows = np.shape(centers)[0]
+#    columns = np.shape(centers)[1]
+#    rectangle(centers, cv2.Rect(0,0, rows,columns),255)
+#    mask = np.zeros((rows,columns), np.uint8, 255)
+#    return None
+
+def unscalePoint(point, img_eye):
+    ratio = FAST_EYE_WIDTH/(np.shape(img_eye)[1])
+    x = round(point[0] / ratio)
+    y = round(point[1] / ratio)
+    return (x,y)
+        
