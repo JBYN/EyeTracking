@@ -31,6 +31,7 @@ def detect_eyeCenter(parameters):
             #test the possible centers
             numberGradients = np.square(np.shape(gradientX_norm)[0])
             centers = ((hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm))/numberGradients)
+            TEST
             _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
             
             #postprocessing

@@ -65,31 +65,34 @@ def testPossibleCenters(weight, gradientX, gradientY):
     columns = np.shape(weight)[1]
     results = np.zeros((rows,columns),np.uint8)
     print("PossibleCenters_BEGIN")
-    for y in range(0,rows-1):
-        for x in range(0,columns-1):
-            if gradientX[y][x] != 0 or gradientY[y][x] != 0:
-                results = testPossibleCentersFormula(x,y,weight, [gradientX[y][x], gradientY[y][x]], results)
+    #For each possible centre in the image
+    for cy in range(0,rows-1):
+        for cx in range(0,columns-1):
+            results[cy,cx] = testPossibleCentersFormula(cx,cy,weight, gradientX, gradientY)
     print("PossibleCenters_END")
     return results
 
-def testPossibleCentersFormula(x, y, weight, gradient_vector, output):
-    for cy in range(0, np.shape(output)[0]):
-        for cx in range(0,np.shape(output)[1]):
-            if x != cx or y != cy:
+def testPossibleCentersFormula(cx, cy, weight, gradientX, gradientY):
+    output = 0
+    #The sum of the displacement vector * gradient squared for each pixel position
+    for y in range(0, np.shape(weight)[0]):
+        for x in range(0,np.shape(weight)[1]):
+            if x != cx or y != cy or gradientX[y][x] != 0 or gradientY[y][x] != 0:
+                gradient_vector = [gradientX[y][x],gradientY[y][x]]
                 
                 #displacement vector
                 #vector from the possible center to the gradient origin
                 dx = x - cx
-                dy = y -cy
+                dy = y - cy
                 #normalize the distance
-                magnitude = np.sqrt(np.square(dx) + np.square(dy))
+                magnitude = round(np.sqrt(np.square(dx) + np.square(dy)))
                 dx_norm = dx/magnitude
                 dy_norm = dy/magnitude
                 displacementVector = [[dx_norm],[dy_norm]]
                 
                 dotProduct = max(0,np.dot(gradient_vector,displacementVector))
                 #Square and multiply by the weight
-                output[cy][cx] += int(np.square(dotProduct))*weight[cy][cx]
+                output += int(np.square(dotProduct))*weight[cy][cx]
     return output
 
 
