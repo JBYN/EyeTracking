@@ -13,39 +13,41 @@ def detect_eyeCenter(parameters):
     eyes = detect_2eyesOf1person(parameters)
     
     if eyes != None:
-        for i in range(0,np.shape(eyes)[0]):
-            gradientX = hf.computeXGradient(eyes[i])
-            gradientY = np.transpose(hf.computeXGradient(np.transpose(eyes[i])))
-            print("SHAPE_X: " + str(np.shape(gradientX)))
-            print("SHAPE_Y: " + str(np.shape(gradientY)))
-            magnitudes = hf.gradientMagnitude(gradientX,gradientY)
-            threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
+#        cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows))
+        eye_L = cv2.resize(eyes[0],(hf.FAST_EYE_WIDTH, int(((hf.FAST_EYE_WIDTH)/np.shape(eyes[0])[1])*np.shape(eyes[0])[0])))
+        gradient = hf.computeGradient(eye_L)
+        
+        #Normalize gradient
+        magnitudes = hf.gradientMagnitude(gradient)
+        threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
+        gradient_norm = hf.normalizeGradient(gradient,magnitudes,threshold)
+
+        #get weight
+        weight = hf.get_weight(eye_L,BLUR_WEIGHT_SIZE)
+        _,maxValW,_,maxLocW = cv2.minMaxLoc(weight)
+        print("DarkValue: " + str(maxValW))
+        #test the possible centers
+#        numberGradients = np.size(gradient)/2
+        centers = hf.testPossibleCenters(weight, gradient_norm)
+        print("CENTERS: " + str(centers))
+#        print("SHAPE_CENTERS: " + str(np.shape(centers)))
+        _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
+        print("maxLoc: " + str(maxLoc))
             
-            #Normalize gradientX and gradientY
-            gradientX_norm = hf.normalizeGradient(gradientX,magnitudes,threshold)
-            gradientY_norm = hf.normalizeGradient(gradientY,magnitudes,threshold)
-            
-            #get weight
-            weight = hf.get_weight(eyes[i],BLUR_WEIGHT_SIZE)
-            
-            #test the possible centers
-            numberGradients = np.square(np.shape(gradientX_norm)[0])
-            centers = ((hf.testPossibleCenters(weight, gradientX_norm, gradientY_norm))/numberGradients)
-            TEST
-            _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
-            
-            #postprocessing
-            #applying a threshold
-            floodThresh = maxVal*POSTPROCESS_THRESHOLD
-            floodClone = cv2.threshold(centers,floodThresh,0.0,cv2.THRESH_TOZERO)
-            #remove values connected to the borders
-            mask = hf.floodRemoveEdges(floodClone)
-            
-            _,maxVal,_,maxLoc = cv2.minMaxLoc(centers,mask)
-            
-            cv2.end.WORKS_FINE
-            
-#    return unscalePoint(maxLoc,eyes[])
+#        postprocessing
+#        applying a threshold
+        floodThresh = maxVal*POSTPROCESS_THRESHOLD
+        _,floodClone = cv2.threshold(centers,floodThresh,0.0,cv2.THRESH_TOZERO)
+        print("FLOODCLONE: " + str(floodClone))
+#        print("SHAPE_F: " + str(np.shape(floodClone)))
+        #remove values connected to the borders
+        mask = hf.removeEdges(floodClone)
+        
+        _,maxVal,_,maxLoc = cv2.minMaxLoc(mask)
+        
+        
+#            cv2.end.WORKS_FINE
+        return (eyes[0],hf.unscalePoint(maxLocW,eyes[0]))
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.

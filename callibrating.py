@@ -53,6 +53,7 @@ def callibrate_dataCollection(parameters):
     
     if len(middle[0]) < CALLIBRATING_DATA :
         results_middle = callibrate_middle(callibrating_background,parameters)
+        STOP
         if results_middle != None:
             if results_middle[0] != None:
                 print("Middle: " + str(len(middle[0])))
