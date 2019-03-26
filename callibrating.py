@@ -53,37 +53,27 @@ def callibrate_dataCollection(parameters):
     
     if len(middle[0]) < CALLIBRATING_DATA :
         results_middle = callibrate_middle(callibrating_background,parameters)
-        STOP
         if results_middle != None:
-            if results_middle[0] != None:
+            for i in range(0,1):
                 print("Middle: " + str(len(middle[0])))
-                middle[0].append(results_middle[0][0])
-                middle[1].append(results_middle[0][1])
-            if results_middle[1] != None:
-                middle[0].append(results_middle[1][0])
-                middle[1].append(results_middle[1][1])
+                middle[0].append(results_middle[i][0][0])
+                middle[1].append(results_middle[i][0][1])
     elif len(left[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Middle")    
         results_left = callibrate_left(callibrating_background,parameters)
         if results_left != None:
-            if results_left[0] != None:
+            for i in range(0,1):
                 print("Left: " + str(len(left[0])))
-                left[0].append(results_left[0][0])
-                left[1].append(results_left[0][1])
-            if results_left[1] != None:
-                left[0].append(results_left[1][0])
-                left[1].append(results_left[1][1])
+                left[0].append(results_left[i][0][0])
+                left[1].append(results_left[i][0][1])
     elif len(right[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Left")
         results_right = callibrate_right(callibrating_background,parameters)
         if results_right != None:
-            if results_right[0] != None:
+            for i in range(0,1):
                 print("Right: " + str(len(right[0])))
-                right[0].append(results_right[0][0])
-                right[1].append(results_right[0][1])
-            if results_right[1] != None:
-                right[0].append(results_right[1][0])
-                right[1].append(results_right[1][1])
+                right[0].append(results_right[i][0][0])
+                right[1].append(results_right[i][0][1])
     else:
         cv2.destroyWindow("Right")
         return True
@@ -100,10 +90,8 @@ def callibrate_middle(callibrating_screen,parameters):
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y,"Middle")
     
-    #detecting eye pupils
-#    if eyes != None:
     return get_eyeCenters(parameters)
-#    else: return None
+
 
 #Callibration for looking to the left of the screen.
 #Getting the center of the two eyes when they are looking to the left of the screen
@@ -115,10 +103,8 @@ def callibrate_left(callibrating_screen, parameters):
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y, "Left") 
     
-    #detecting eye pupils
-    #if eyes != None:
     return get_eyeCenters(parameters)
-    #else: return None
+    
 
 #Callibration for looking to the right of the screen.
 #Getting the center of the two eyes when they are looking to the right of the screen
@@ -130,10 +116,8 @@ def callibrate_right(callibrating_screen,parameters):
     y = int(callibrating_screen.shape[0]/2)
     show_callibratingScreen(callibrating_screen,x,y,"Right") 
     
-    #detecting eye pupils
-    #if eyes != None:
     return get_eyeCenters(parameters)
-    #else: return None
+    
     
 #Showing a screen with a focus point to get callibrating values
 #@param callibrating_screen: the background of the screen
