@@ -10,44 +10,22 @@ BLUR_WEIGHT_SIZE = 5
 POSTPROCESS_THRESHOLD = 0.9
 
 def detect_eyeCenter(parameters):
+    output = []
     eyes = detect_2eyesOf1person(parameters)
     
     if eyes != None:
-#        cv::resize(src, dst, cv::Size(kFastEyeWidth,(((float)kFastEyeWidth)/src.cols) * src.rows))
-        eye_L = cv2.resize(eyes[0],(hf.FAST_EYE_WIDTH, int(((hf.FAST_EYE_WIDTH)/np.shape(eyes[0])[1])*np.shape(eyes[0])[0])))
-        gradient = hf.computeGradient(eye_L)
-        
-        #Normalize gradient
-        magnitudes = hf.gradientMagnitude(gradient)
-        threshold = hf.computeDynamicThreshold(magnitudes, GRADIENT_THRESHOLD)
-        gradient_norm = hf.normalizeGradient(gradient,magnitudes,threshold)
+        for i in range(0,np.shape(eyes)[0]):
+            eye = cv2.resize(eyes[i][0],(hf.FAST_EYE_WIDTH, int(((hf.FAST_EYE_WIDTH)/np.shape(eyes[i][0])[1])*np.shape(eyes[i][0])[0])))
 
-        #get weight
-        weight = hf.get_weight(eye_L,BLUR_WEIGHT_SIZE)
-        _,maxValW,_,maxLocW = cv2.minMaxLoc(weight)
-        print("DarkValue: " + str(maxValW))
-        #test the possible centers
-#        numberGradients = np.size(gradient)/2
-        centers = hf.testPossibleCenters(weight, gradient_norm)
-        print("CENTERS: " + str(centers))
-#        print("SHAPE_CENTERS: " + str(np.shape(centers)))
-        _,maxVal,_,maxLoc = cv2.minMaxLoc(centers)
-        print("maxLoc: " + str(maxLoc))
-            
-#        postprocessing
-#        applying a threshold
-        floodThresh = maxVal*POSTPROCESS_THRESHOLD
-        _,floodClone = cv2.threshold(centers,floodThresh,0.0,cv2.THRESH_TOZERO)
-        print("FLOODCLONE: " + str(floodClone))
-#        print("SHAPE_F: " + str(np.shape(floodClone)))
-        #remove values connected to the borders
-        mask = hf.removeEdges(floodClone)
+            #get weight
+            weight = hf.get_weight(eye,BLUR_WEIGHT_SIZE)
+            _,maxValW,_,maxLocW = cv2.minMaxLoc(weight)
+            print("DarkValue: " + str(maxValW))
+            xy_originalEye = hf.unscalePoint(maxLocW,eyes[i][0])
+            xy_face = (eyes[i][1][0]+xy_originalEye[0], eyes[i][1][1]+xy_originalEye[1])
+            output.append((xy_originalEye,xy_face))
         
-        _,maxVal,_,maxLoc = cv2.minMaxLoc(mask)
-        
-        
-#            cv2.end.WORKS_FINE
-        return (eyes[0],hf.unscalePoint(maxLocW,eyes[0]))
+        return output
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.
@@ -91,6 +69,9 @@ def detect_2eyesOf1person(parameters):
                     two_eyes == True
                     img_leftEye = roi_gray[checkedEyes[0][1]:checkedEyes[0][1]+checkedEyes[0][2], checkedEyes[0][0]:checkedEyes[0][0]+checkedEyes[0][3]]
                     img_rightEye = roi_gray[checkedEyes[1][1]:checkedEyes[1][1]+checkedEyes[1][2], checkedEyes[1][0]:checkedEyes[1][0]+checkedEyes[1][3]]
+                    #Keeping track of the postion of the left corner of the eye on the original image
+                    xy_cornerLeftEye = (checkedEyes[0][0]+x,checkedEyes[0][1]+y)
+                    xy_cornerRightEye = (checkedEyes[1][0]+x,checkedEyes[1][1]+y)
                     
                     #Constants for indicator
                     eye_color_R = (0,0,255) #Red
@@ -99,7 +80,7 @@ def detect_2eyesOf1person(parameters):
                     #indicator
                     ind_leftEye = cv2.rectangle(roi_color, (checkedEyes[0][0], checkedEyes[0][1]), (checkedEyes[0][0] + checkedEyes[0][3], checkedEyes[0][1] + checkedEyes[0][2]), eye_color_L, eye_stroke)
                     ind_rightEye = cv2.rectangle(roi_color, (checkedEyes[1][0], checkedEyes[1][1]), (checkedEyes[1][0] + checkedEyes[1][3], checkedEyes[1][1] + checkedEyes[1][2]), eye_color_R, eye_stroke)
-                    return [img_leftEye,img_rightEye] 
+                    return [(img_leftEye,xy_cornerLeftEye),(img_rightEye,xy_cornerRightEye)]
             else:
                 print("Not able to detect two eyes")
 
@@ -143,57 +124,3 @@ def check4LeftAndRightEye(eyes):
         return [leftEye,rightEye]
     else:
         return None
-
-
-
-
-
-###############################################################################
-#Old method to detect the eyecenter
-###############################################################################
-
-##Detect the circle in the image. This circle represents the pupil of the eye.
-##The x and y values of the center of the circle and the processed image are returned.
-##When no circle is detected the value None will be returned.
-##@param eye determine the circles on this image. (Image of an eye)
-##@return [x,y,image]
-#def detect_eyeCenter(eye):
-#    #preprocessing the images
-#    print("preprocessing")
-#    eye_gray = cv2.cvtColor(eye, cv2.COLOR_BGR2GRAY,0)
-#    res_eye = cv2.resize(eye_gray,(400,400), interpolation = cv2.INTER_CUBIC)
-#    blur_eye = cv2.GaussianBlur(res_eye,(3,3),0)
-#    crop_eye = blur_eye[100:300,0:400]
-#    
-#    #change the contrast
-##    test = np.zeros(crop_eye.shape, crop_eye.dtype)
-##    alpha = 2.5;
-##    beta = 0;
-##    for y in range(crop_eye.shape[0]):
-##        for x in range(crop_eye.shape[1]):
-##            test[y,x] = np.clip(alpha*crop_eye[y,x] + beta, 0, 255)
-##    
-##    print("ArrayTest: " + str(test))
-#    print("passed preprocessing")
-#    cv2.imwrite("blur_eye20.png",crop_eye)
-#    
-#    #looking for circles with Hough transform
-#    print("detect pupil")
-#    eye_pupils = cv2.HoughCircles(crop_eye,cv2.HOUGH_GRADIENT,1,15,50,15,30,60)
-#    if np.all(eye_pupils) != None:  
-#        if str(eye_pupils) != str([[50][0][0][0]]):
-#            print("ERROR 50 opgevangen")
-#        else:
-#            eye_pupils = np.uint16(np.around(eye_pupils))
-#            print("origineel: " + str(eye_pupils))
-#            print("hhh: " + str(eye_pupils[0,:])) 
-#            for pupil in eye_pupils[0,:]:
-#                print("pupil: " + str(pupil))
-#                print("x: " + str(pupil[0]))
-#                print("y: " + str(pupil[1]))
-#                print("radius: " + str(pupil[2]))
-#                
-#                cv2.circle(crop_eye,(pupil[0],pupil[1]),int(pupil[2]/3),(0,255,0))
-#                cv2.imshow("New",crop_eye)
-#                
-#                return [pupil[0],pupil[1],crop_eye]
