@@ -8,6 +8,7 @@ Created on Wed Jan 23 14:39:50 2019
 import cv2
 import numpy as np
 import findEyeCenter as detect
+import classes as c
 
 CALLIBRATING_DATA = 10
 
@@ -33,9 +34,9 @@ def callibrate():
     cam = cv2.VideoCapture(0) #0 used as parameter to use the webcam of the computer/laptop
     
     while True:
-        b,img = cam.read() #open the camera
-        #eyes = detect.detect_2eyesOf1person(face_cascade,eye_cascade,b,img) #detecting eyes
-        parameters = [face_cascade,eye_cascade,b,img]
+        view,img = cam.read() #open the camera
+       
+        parameters = c.Eye_Parameters(face_cascade,eye_cascade,view,img)
         if callibrate_dataCollection(parameters): 
             break
  
