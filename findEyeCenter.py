@@ -9,21 +9,14 @@ GRADIENT_THRESHOLD = 0.3
 BLUR_WEIGHT_SIZE = 5
 POSTPROCESS_THRESHOLD = 0.9
 
-def detect_eyeCenter(parameters: c.Eye_Parameters):
-    output = []
-    eyes = detect_2eyesOf1person(parameters)
+def detect_eyeCenter(parameters: c.Eye_Parameters) -> c.EyePupils:
+    face = detect_2eyesOf1person(parameters)
     
-    if eyes != None:
-        for i in range(0,np.shape(eyes)[0]):
-            eye = eyes[i][0]
-            #get position of the pupil by looking for the darkest spot
-            pos = get_positionPupil(eye,BLUR_WEIGHT_SIZE)
-#            print("DarkValue: " + str(maxValW))
-            xy_originalEye = pos
-            xy_face = (eyes[i][1][0]+xy_originalEye[0], eyes[i][1][1]+xy_originalEye[1])
-            output.append((xy_originalEye,xy_face))
+    if face != None:
+        #get position of the pupil by looking for the darkest spot
+        posPupils = get_positionPupils(face,BLUR_WEIGHT_SIZE)
         
-        return output
+        return posPupils
     return None
 
 #Detecting the 2 eyes on an image of a person using haarcascades.
@@ -34,7 +27,7 @@ def detect_eyeCenter(parameters: c.Eye_Parameters):
 #@param b:
 #@param img: the image where the eyes has to be detect on
 #@return: [right eye, left eye]
-def detect_2eyesOf1person(parameters: c.Eye_Parameters):
+def detect_2eyesOf1person(parameters: c.Eye_Parameters) -> c.Face:
     two_eyes = False #Not 2 eyes detected yet       
     
     #to make it possible to detect faces the capture has to be in grayscale. 
@@ -45,9 +38,9 @@ def detect_2eyesOf1person(parameters: c.Eye_Parameters):
         print("FACE detected!")
         #getting the coördinates of the detected faces
         for (x,y,w,h) in faces:
-            #print(x,y,w,h)
-            roi_gray = gray[y:y+h, x:x+w] #pixels of the region of interest
-            roi_color = parameters.image[y:y+h, x:x+w]
+            p_face = c.Rectangle(x,y,w,h)
+            roi_gray = gray[p_face.y:p_face.y + p_face.height, p_face.x:p_face.x + p_face.width] #pixels of the region of interest
+            roi_color = parameters.image[p_face.y:p_face.y + p_face.height, p_face.x:p_face.x + p_face.width]
             
             #preprocessing
             sigma = SMOOTH_FACTOR * w;
@@ -61,22 +54,25 @@ def detect_2eyesOf1person(parameters: c.Eye_Parameters):
                 p_checkedEyes = check4LeftAndRightEye(p_eyes)
                 if p_checkedEyes != None:
                     two_eyes == True
+                    #Get the postions of the two eyes so they can be isolated
                     p_leftEye = p_checkedEyes.leftEye
                     p_rightEye = p_checkedEyes.rightEye
                     img_leftEye = roi_gray[p_leftEye.y:p_leftEye.y + p_leftEye.height, p_leftEye.x:p_leftEye.x + p_leftEye.width]
                     img_rightEye = roi_gray[p_rightEye.y:p_rightEye.y + p_rightEye.height, p_rightEye.x:p_rightEye.x + p_rightEye.width]
-                    #Keeping track of the postion of the left corner of the eye on the original image
-                    xy_cornerLeftEye = (checkedEyes[0][0]+x,checkedEyes[0][1]+y)
-                    xy_cornerRightEye = (checkedEyes[1][0]+x,checkedEyes[1][1]+y)
+                    
+                    leftEye = c.Eye(p_leftEye,img_leftEye)
+                    rightEye = c.Eye(p_rightEye, img_rightEye)
+                    
+                    face = c.Face(p_face,roi_color,leftEye,rightEye)
                     
                     #Constants for indicator
                     eye_color_R = (0,0,255) #Red
                     eye_color_L = (255,0,0) #Blue
                     eye_stroke = 2
                     #indicator
-                    ind_leftEye = cv2.rectangle(roi_color, (checkedEyes[0][0], checkedEyes[0][1]), (checkedEyes[0][0] + checkedEyes[0][3], checkedEyes[0][1] + checkedEyes[0][2]), eye_color_L, eye_stroke)
-                    ind_rightEye = cv2.rectangle(roi_color, (checkedEyes[1][0], checkedEyes[1][1]), (checkedEyes[1][0] + checkedEyes[1][3], checkedEyes[1][1] + checkedEyes[1][2]), eye_color_R, eye_stroke)
-                    return [(img_leftEye,xy_cornerLeftEye),(img_rightEye,xy_cornerRightEye)]
+                    ind_leftEye = cv2.rectangle(roi_color, (p_leftEye.x, p_leftEye.y), (p_leftEye.x + p_leftEye.width, p_leftEye.y + p_leftEye.width), eye_color_L, eye_stroke)
+                    ind_rightEye = cv2.rectangle(roi_color, (p_rightEye.x, p_rightEye.y), (p_rightEye.x + p_rightEye.width, p_rightEye.y + p_rightEye.width), eye_color_R, eye_stroke)
+                    return face
             else:
                 print("Not able to detect two eyes")
 
@@ -108,22 +104,44 @@ def check4LeftAndRightEye(eyes: c.Position2Eyes) -> c.Position2Eyes_LR:
     eye_1 = eyes.eye1
     eye_2 = eyes.eye2
     
-    if eye_1.x < eye_2.x and (eye_1.x + eye_1.w) < eye_2.x:
+    if eye_1.x < eye_2.x and (eye_1.x + eye_1.width) < eye_2.x:
         p_rightEye = eye_1
         p_leftEye = eye_2
         return c.Position2Eyes_LR(p_leftEye,p_rightEye)
-    elif eye_2.x < eye_1.x and (eye_2.x + eye_2.w) < eye_1.x:
+    elif eye_2.x < eye_1.x and (eye_2.x + eye_2.width) < eye_1.x:
         p_rightEye = eye_2
         p_leftEye = eye_1
         return c.Position2Eyes_LR(p_leftEye,p_rightEye)
     else:
         return None
     
-def get_positionPupil(eye,weightBlurSize):
+def get_positionPupils(face: c.Face, weightBlurSize: int) -> c.EyePupils:
     #pre-processing
-    blur = cv2.GaussianBlur(eye,(weightBlurSize,weightBlurSize),0,0)
+    blur_leftEye = cv2.GaussianBlur(face.leftEye.imgEye ,(weightBlurSize,weightBlurSize),0,0)
+    blur_rightEye = cv2.GaussianBlur(face.rightEye.imgEye, (weightBlurSize,weightBlurSize), 0,0)
+    #Remove edges
+    leftEye = removeEdges(blur_leftEye)
+    rightEye = removeEdges(blur_rightEye)
     #get min
-    _,_,minLoc,_ = cv2.minMaxLoc(blur)
+    _,_,minLoc_L,_ = cv2.minMaxLoc(leftEye)
+    _,_,minLoc_R,_ = cv2.minMaxLoc(rightEye)
     
-    return minLoc
+    posPupils = scalePosition(face,minLoc_L,minLoc_R)
+    
+    return posPupils
 
+def scalePosition(face: c.Face, pos_left: tuple, pos_right: tuple) -> c.EyePupils:
+    leftPupil_scaled = c.Point((pos_left[0] + face.leftEye.pEye.x + face.pFace.x),(pos_left[1] + face.leftEye.pEye.y + face.pFace.y))
+    rightPupil_scaled = c.Point((pos_right[0] + face.rightEye.pEye.x + face.pFace.x),(pos_right[1] + face.rightEye.pEye.y + face.pFace.y))
+    
+    return c.EyePupils(leftPupil_scaled,rightPupil_scaled)
+
+def removeEdges(eye: np.ndarray)->np.ndarray:
+    eye = removeHorizontalEdges(eye)
+    eye = np.transpose(removeHorizontalEdges(np.transpose(eye)))
+    return eye
+
+def removeHorizontalEdges(eye: np.ndarray)->np.ndarray:
+    eye[0] = [255]*np.shape(eye)[0]
+    eye[np.shape(eye)[0]-1] = [255]*np.shape(eye)[0]
+    return eye

@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import findEyeCenter as detect
 import classes as c
+import statistics as stat
 
 CALLIBRATING_DATA = 10
 
@@ -24,6 +25,14 @@ left.append(list()) #y values
 right = list()
 right.append(list()) #x values
 right.append(list()) #y values
+
+up = list()
+up.append(list()) #x values
+up.append(list()) #y values
+
+down = list()
+down.append(list()) #x values
+down.append(list()) #y values
 
 #Start callibration
 def callibrate():
@@ -55,28 +64,45 @@ def callibrate_dataCollection(parameters):
     if len(middle[0]) < CALLIBRATING_DATA :
         results_middle = callibrate_middle(callibrating_background,parameters)
         if results_middle != None:
-            for i in range(0,1):
-                print("Middle: " + str(len(middle[0])))
-                middle[0].append(results_middle[i][0][0])
-                middle[1].append(results_middle[i][0][1])
+            print("Middle: " + str(len(middle[0])))
+            middle[0].append(results_middle.leftPupil.x)
+            middle[0].append(results_middle.rightPupil.x)
+            middle[1].append(results_middle.leftPupil.y)
+            middle[1].append(results_middle.rightPupil.y)
     elif len(left[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Middle")    
         results_left = callibrate_left(callibrating_background,parameters)
         if results_left != None:
-            for i in range(0,1):
-                print("Left: " + str(len(left[0])))
-                left[0].append(results_left[i][0][0])
-                left[1].append(results_left[i][0][1])
+            left[0].append(results_left.leftPupil.x)
+            left[0].append(results_left.rightPupil.x)
+            left[1].append(results_left.leftPupil.y)
+            left[1].append(results_left.rightPupil.y)
     elif len(right[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Left")
         results_right = callibrate_right(callibrating_background,parameters)
         if results_right != None:
-            for i in range(0,1):
-                print("Right: " + str(len(right[0])))
-                right[0].append(results_right[i][0][0])
-                right[1].append(results_right[i][0][1])
-    else:
+            right[0].append(results_right.leftPupil.x)
+            right[0].append(results_right.rightPupil.x)
+            right[1].append(results_right.leftPupil.y)
+            right[1].append(results_right.rightPupil.y)
+    elif len(up[0]) < CALLIBRATING_DATA:
         cv2.destroyWindow("Right")
+        results_up = callibrate_up(callibrating_background,parameters)
+        if results_up != None:
+            up[0].append(results_up.leftPupil.x)
+            up[0].append(results_up.rightPupil.x)
+            up[1].append(results_up.leftPupil.y)
+            up[1].append(results_up.rightPupil.y)
+    elif len(down[0]) < CALLIBRATING_DATA:
+        cv2.destroyWindow("Up")
+        results_down = callibrate_down(callibrating_background,parameters)
+        if results_down != None:
+            down[0].append(results_down.leftPupil.x)
+            down[0].append(results_down.rightPupil.x)
+            down[1].append(results_down.leftPupil.y)
+            down[1].append(results_down.rightPupil.y)
+    else:
+        cv2.destroyWindow("Down")
         return True
     
     return False
@@ -119,7 +145,20 @@ def callibrate_right(callibrating_screen,parameters):
     
     return get_eyeCenters(parameters)
     
+def callibrate_up(callibrating_screen,parameters):
+    x = int(callibrating_screen.shape[1]/2)
+    y = 10
+    show_callibratingScreen(callibrating_screen,x,y,"Up") 
     
+    return get_eyeCenters(parameters)
+
+def callibrate_down(callibrating_screen,parameters):
+    x = int(callibrating_screen.shape[1]/2)
+    y = int(callibrating_screen.shape[0])-10
+    show_callibratingScreen(callibrating_screen,x,y,"Down") 
+    
+    return get_eyeCenters(parameters)
+   
 #Showing a screen with a focus point to get callibrating values
 #@param callibrating_screen: the background of the screen
 #@param x: the x value of the center of the focus point
@@ -137,11 +176,10 @@ def show_callibratingScreen(callibrating_screen,x,y,windowName):
 #@param data: a list of data
 #@return: [low bound, high bound]
 def get_callibrationResults(data):
-    mu = np.mean(data)
-    sigma = np.std(data,mu)
+    mu = stat.mu(data)
+    sigma = stat.sigma(data,mu)
     return [mu - sigma, mu + sigma]
 
 def get_eyeCenters(parameters):
     return detect.detect_eyeCenter(parameters)
     
-callibrate()
