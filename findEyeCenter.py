@@ -13,7 +13,8 @@ def detect_eyeCenter(parameters: c.Eye_Parameters) -> c.EyePupils:
     face = detect_2eyesOf1person(parameters)
     
     if face != None:
-        #get position of the pupil by looking for the darkest spot
+        cv2.imshow("leftEye",face.leftEye.imgEye)
+        #get position of the pupil by looking for the largest dark area
         posPupils = get_positionPupils(face,BLUR_WEIGHT_SIZE)
         
         return posPupils
@@ -59,7 +60,7 @@ def detect_2eyesOf1person(parameters: c.Eye_Parameters) -> c.Face:
                     p_rightEye = p_checkedEyes.rightEye
                     img_leftEye = roi_gray[p_leftEye.y:p_leftEye.y + p_leftEye.height, p_leftEye.x:p_leftEye.x + p_leftEye.width]
                     img_rightEye = roi_gray[p_rightEye.y:p_rightEye.y + p_rightEye.height, p_rightEye.x:p_rightEye.x + p_rightEye.width]
-                    
+                  
                     leftEye = c.Eye(p_leftEye,img_leftEye)
                     rightEye = c.Eye(p_rightEye, img_rightEye)
                     
@@ -95,15 +96,16 @@ def findEyes(eye_cascade: cv2.CascadeClassifier, img: np.ndarray) -> c.Position2
             nr_eyes += 1
             if nr_eyes == 1:
                 p_eye1 = c.Rectangle(x,y,w,h)
-            elif nr_eyes == 2:
+            elif (nr_eyes == 2) and np.abs(p_eye1.height-y)<= 50:
                 p_eye2 = c.Rectangle(x,y,w,h)
                 return c.Position2Eyes(p_eye1,p_eye2)
+            else: nr_eyes -=1
     return None
 
 def check4LeftAndRightEye(eyes: c.Position2Eyes) -> c.Position2Eyes_LR:
     eye_1 = eyes.eye1
     eye_2 = eyes.eye2
-    
+
     if eye_1.x < eye_2.x and (eye_1.x + eye_1.width) < eye_2.x:
         p_rightEye = eye_1
         p_leftEye = eye_2
@@ -112,27 +114,44 @@ def check4LeftAndRightEye(eyes: c.Position2Eyes) -> c.Position2Eyes_LR:
         p_rightEye = eye_2
         p_leftEye = eye_1
         return c.Position2Eyes_LR(p_leftEye,p_rightEye)
-    else:
-        return None
+    return None
     
 def get_positionPupils(face: c.Face, weightBlurSize: int) -> c.EyePupils:
-    #pre-processing
-    blur_leftEye = cv2.GaussianBlur(face.leftEye.imgEye ,(weightBlurSize,weightBlurSize),0,0)
-    blur_rightEye = cv2.GaussianBlur(face.rightEye.imgEye, (weightBlurSize,weightBlurSize), 0,0)
-    #Remove edges
-    leftEye = removeEdges(blur_leftEye)
-    rightEye = removeEdges(blur_rightEye)
-    #get min
-    _,_,minLoc_L,_ = cv2.minMaxLoc(leftEye)
-    _,_,minLoc_R,_ = cv2.minMaxLoc(rightEye)
-    
-    posPupils = scalePosition(face,minLoc_L,minLoc_R)
-    
-    return posPupils
+    p_leftPupil = get_positionPupil(face.leftEye.imgEye,weightBlurSize)
+    p_rightPupil = get_positionPupil(face.rightEye.imgEye, weightBlurSize)
+#    #pre-processing
+#    blur_leftEye = cv2.GaussianBlur(face.leftEye.imgEye ,(weightBlurSize,weightBlurSize),0,0)
+#    blur_rightEye = cv2.GaussianBlur(face.rightEye.imgEye, (weightBlurSize,weightBlurSize), 0,0)
+#    #Remove edges
+#    leftEye = removeEdges(blur_leftEye)
+#    rightEye = removeEdges(blur_rightEye)
+#    #get min 
+#    _,_,minLoc_L,_ = cv2.minMaxLoc(leftEye)
+#    _,_,minLoc_R,_ = cv2.minMaxLoc(rightEye)
+    if p_leftPupil != None and p_rightPupil != None:
+        print("EYECENTERS detected!")
+        posPupils = scalePosition(face,p_leftPupil,p_rightPupil)
+        return posPupils
+    return None
 
-def scalePosition(face: c.Face, pos_left: tuple, pos_right: tuple) -> c.EyePupils:
-    leftPupil_scaled = c.Point((pos_left[0] + face.leftEye.pEye.x + face.pFace.x),(pos_left[1] + face.leftEye.pEye.y + face.pFace.y))
-    rightPupil_scaled = c.Point((pos_right[0] + face.rightEye.pEye.x + face.pFace.x),(pos_right[1] + face.rightEye.pEye.y + face.pFace.y))
+def get_positionPupil(eye: np.ndarray, weightBlurSize: int)->c.Point:
+    #pre-processing
+    blur_Eye = cv2.GaussianBlur(eye ,(weightBlurSize,weightBlurSize),0,0)
+    _,threshold = cv2.threshold(blur_Eye, 50, 255, cv2.THRESH_BINARY_INV)
+    cv2.imshow("THRESHOLD", threshold)
+    contours,_ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    #get position pupil
+    if contours !=None:
+        contours = sorted(contours, key=lambda x: cv2.contourArea(x), reverse=True)
+        for cnt in contours:
+            (x, y, w, h) = cv2.boundingRect(cnt)
+            return c.Point(int(x + w/2), int(y + h/2))
+    return None
+
+def scalePosition(face: c.Face, pos_left: c.Point, pos_right: c.Point) -> c.EyePupils:
+    leftPupil_scaled = c.Point((pos_left.x + face.leftEye.pEye.x + face.pFace.x),(pos_left.y + face.leftEye.pEye.y + face.pFace.y))
+    rightPupil_scaled = c.Point((pos_right.x + face.rightEye.pEye.x + face.pFace.x),(pos_right.y + face.rightEye.pEye.y + face.pFace.y))
     
     return c.EyePupils(leftPupil_scaled,rightPupil_scaled)
 

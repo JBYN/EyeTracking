@@ -60,4 +60,5 @@ class EyePupils():
     def __init__(self,centerLeftPupil: Point, centerRightPupil: Point):
         self.leftPupil = centerLeftPupil
         self.rightPupil = centerRightPupil
+    
         

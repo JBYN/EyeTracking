@@ -1,6 +1,7 @@
 #source
 #https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
+import numpy as np
 import findEyeCenter as detect
 import callibrating
 import classes as c
@@ -33,39 +34,64 @@ y_bordersUp = callibrating.get_callibrationResults(callibrating.up[1])
 x_bordersDown = callibrating.get_callibrationResults(callibrating.down[0])
 y_bordersDown  = callibrating.get_callibrationResults(callibrating.down[1])
 
-#screen = np.zeros((800,1600,3),np.uint8)
+f = open("Borders.txt","w+")
+f.write("LEFT:" + str(x_bordersLeft))
+f.write("MIDDLE:" + str(x_bordersMiddle))
+f.write("RIGHT:" + str(x_bordersRight))
+f.close()
+
 cam = cv2.VideoCapture(0) #0 used as parameter to use the webcam of the computer/laptop
 
-while True:
-    print("start")
-    b,img = cam.read()
-    parameters = c.Eye_Parameters(face_cascade, eye_cascade, b,img)
-    eyeCenters = detect.detect_eyeCenter(parameters)
+def main() -> None:
+    while True:
+        print("start")
+        b,img = cam.read()
+        parameters = c.Eye_Parameters(face_cascade, eye_cascade, b,img)
+        eyeCenters = detect.detect_eyeCenter(parameters)
+        
+        #detecting eye pupils
+        if eyeCenters != None:
+            TestLR(eyeCenters)
+             
+#        cv2.namedWindow("windowName", cv2.WND_PROP_FULLSCREEN)
+#        cv2.setWindowProperty("windowName",cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+#        cv2.imshow("windowName", img)      
+        
+        key = cv2.waitKey(1)&0xff
+        if key==ord('q'):
+            break
     
-    #detecting eye pupils
-    if eyeCenters != None:
-        print("EYECENTERS detected!")
-        centerRightEye = eyeCenters.rightPupil
-        if x_bordersMiddle[0] < centerRightEye.x < x_bordersMiddle[1]:
-            print("Looking in the MIDDLE of the screen")
-        elif x_bordersLeft[0] < centerRightEye.x < x_bordersLeft[1]: 
-            print("Looking to the LEFT of the screen")
-        elif x_bordersRight[0] < centerRightEye.x < x_bordersRight[1]:            
-            print("Looking to the RIGHT of the screen")
-        if y_bordersUp[0] < centerRightEye.y < y_bordersUp[1]:
-            print("Looking to the UPPER screen")
-        elif y_bordersDown[0] < centerRightEye.y < y_bordersDown[1]:
-            print("Looking to the LOWER screen")
-        else:print("Looking to the MIDDLE")
+    cam.release()
+    cv2.destroyAllWindows()
+    return None
+
+def locateLook(pupils: c.EyePupils) -> str:
+    centerRightEye = pupils.rightPupil
+    if x_bordersMiddle[0] < centerRightEye.x < x_bordersMiddle[1]:
+        print("Looking in the MIDDLE of the screen")
+        return "MIDDLE"
+    elif x_bordersLeft[0] < centerRightEye.x < x_bordersLeft[1]: 
+        print("Looking to the LEFT of the screen")
+        return "LEFT"
+    elif x_bordersRight[0] < centerRightEye.x < x_bordersRight[1]:            
+        print("Looking to the RIGHT of the screen")
+        return "RIGHT"
+    if y_bordersUp[0] < centerRightEye.y < y_bordersUp[1]:
+        print("Looking to the UPPER screen")
+    elif y_bordersDown[0] < centerRightEye.y < y_bordersDown[1]:
+        print("Looking to the LOWER screen")
+    else:print("Looking to the MIDDLE")
     
-    cv2.namedWindow("windowName", cv2.WND_PROP_FULLSCREEN)
-    cv2.setWindowProperty("windowName",cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    cv2.imshow("windowName", img)      
-    
-    key = cv2.waitKey(1)&0xff
-    if key==ord('q'):
-        break
-    
-    
-cam.release()
-cv2.destroyAllWindows()
+    return None
+
+def TestLR(pupils: c.EyePupils)->None:
+    background = np.zeros((800,1600,3),np.uint8)+255 #White background
+    look = locateLook(pupils)
+    cv2.namedWindow("TestScreen", cv2.WND_PROP_FULLSCREEN)
+    cv2.setWindowProperty("TestScreen",cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    cv2.putText(background,look,(200,200),font,1,color,stroke,line_type)
+    cv2.imshow("TestScreen", background)
+    return None
+
+if __name__ == "__main__": main()
+
