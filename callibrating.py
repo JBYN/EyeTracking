@@ -7,8 +7,8 @@ Created on Wed Jan 23 14:39:50 2019
 
 import cv2
 import numpy as np
-import findEyeCenter as detect
-import classes as c
+import controller as detect
+import model as c
 import statistics as stat
 
 CALLIBRATING_DATA = 50

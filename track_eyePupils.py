@@ -2,9 +2,9 @@
 #https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
 import numpy as np
-import findEyeCenter as detect
+import controller as detect
 import callibrating
-import classes as c
+import model as c
 
 #constants to show errors on the image
 font = cv2.FONT_ITALIC
