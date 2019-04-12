@@ -3,7 +3,7 @@
 import cv2
 import numpy as np
 import controller as detect
-import callibrating
+import calibrate
 import model as c
 
 #constants to show errors on the image
@@ -16,23 +16,23 @@ face_cascade = cv2.CascadeClassifier('data/haarcascades/haarcascade_frontalface_
 eye_cascade = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeglasses.xml')
 
 #Callibration
-callibrating.callibrate()
+calibrate.callibrate()
 #Middle borders
-print("Middle: " + str(callibrating.middle[0]))
-x_bordersMiddle = callibrating.get_callibrationResults(callibrating.middle[0])
-y_bordersMiddle = callibrating.get_callibrationResults(callibrating.middle[1])
+print("Middle: " + str(calibrate.middle[0]))
+x_bordersMiddle = calibrate.get_callibrationResults(calibrate.middle[0])
+y_bordersMiddle = calibrate.get_callibrationResults(calibrate.middle[1])
 #Left borders
-x_bordersLeft = callibrating.get_callibrationResults(callibrating.left[0])
-y_bordersLeft = callibrating.get_callibrationResults(callibrating.left[1])
+x_bordersLeft = calibrate.get_callibrationResults(calibrate.left[0])
+y_bordersLeft = calibrate.get_callibrationResults(calibrate.left[1])
 #Right borders
-x_bordersRight = callibrating.get_callibrationResults(callibrating.right[0])
-y_bordersRight = callibrating.get_callibrationResults(callibrating.right[1])
+x_bordersRight = calibrate.get_callibrationResults(calibrate.right[0])
+y_bordersRight = calibrate.get_callibrationResults(calibrate.right[1])
 #Up borders
-x_bordersUp = callibrating.get_callibrationResults(callibrating.up[0])
-y_bordersUp = callibrating.get_callibrationResults(callibrating.up[1])
+x_bordersUp = calibrate.get_callibrationResults(calibrate.up[0])
+y_bordersUp = calibrate.get_callibrationResults(calibrate.up[1])
 #Down borders
-x_bordersDown = callibrating.get_callibrationResults(callibrating.down[0])
-y_bordersDown  = callibrating.get_callibrationResults(callibrating.down[1])
+x_bordersDown = calibrate.get_callibrationResults(calibrate.down[0])
+y_bordersDown  = calibrate.get_callibrationResults(calibrate.down[1])
 
 f = open("Borders.txt","w+")
 f.write("LEFT:" + str(x_bordersLeft))

@@ -8,13 +8,7 @@ import cv2
 import dlib
 import numpy as np
 import constants as cons
-
-
-class Point:
-
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
+from constants import Point
 
 
 class EyeParameters:
@@ -212,3 +206,11 @@ class Face:
                 self.setPosLeftEye(eye_1)
             return True
         return False
+
+    @staticmethod
+    def findEyeVector(rightEye: Eye, eyeCorner: EyeCorner) -> cons.Point:
+        if rightEye.getPupil() is not None:
+            x = rightEye.getPupil().getPosEyeCenter().x - eyeCorner.getPosRightEyeCorner().x
+            y = rightEye.getPupil().getPosEyeCenter().y - eyeCorner.getPosRightEyeCorner().y
+            return cons.Point(x, y)
+        return None
