@@ -1,4 +1,5 @@
 import cv2
+import dlib
 import numpy as np
 import pyautogui
 
@@ -8,9 +9,8 @@ EYE_CASCADE = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeg
 CAM = cv2.VideoCapture(0)  # 0 used as parameter to use the webcam of the computer/laptop
 
 SMOOTH_FACTOR = 0.005
-GRADIENT_THRESHOLD = 0.3
 BLUR_WEIGHT_SIZE = 5
-POSTPROCESS_THRESHOLD = 0.9
+PUPIL_THRESHOLD = 70
 
 
 class Point:
@@ -38,12 +38,12 @@ RADIUS_EYECORNER_IND = 1
 COLOR_EYE_IND = (255, 0, 0)
 
 # Calibrate
-NUMBER_CALLIBRATE_DATA = 1
+NUMBER_CALLIBRATE_DATA = 20
 RADIUS_CALIBRATE_POINT = 10
 COLOR_CALIBRATE_POINT = (0, 0, 0)
 THICKNESS_CALIBRATE_POINT = cv2.FILLED
-CALIBRATE_P1_FACTOR = 0.25
-CALIBRATE_P2_FACTOR = 0.75
+CALIBRATE_P1_FACTOR = 0.125
+CALIBRATE_P2_FACTOR = 0.875
 CALIBRATESCREEN_P1 = False
 CALIBRATESCREEN_P2 = False
 NAME_CALIBRATE_WINDOW = "Calibrate"
@@ -52,4 +52,7 @@ NAME_CALIBRATE_WINDOW = "Calibrate"
 RADIUS_LOOK_POINT = 10
 COLOR_LOOK_POINT = (0, 0, 0)
 THICKNESS_LOOK_POINT = cv2.FILLED
+
+# Facemark
+FACEMARK_PREDICTOR = dlib.shape_predictor("data/shape_predictor_68_face_landmarks.dat")
 

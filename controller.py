@@ -2,7 +2,6 @@
 # https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
 import dlib
-import numpy as np
 import constants
 import model as m
 import constants as cons
@@ -15,7 +14,7 @@ def main():
         print("START")
         b, img = cons.CAM.read()
         parameters = m.EyeParameters(cons.FACE_CASCADE, cons.EYE_CASCADE, b, img)
-        face = getFace(parameters)
+        face = findFace(parameters)
 
         if face is not None:
             # Calibrate
@@ -32,23 +31,19 @@ def main():
                 calibrateP2.updateCalibrate(face)
             else:
                 cv2.destroyWindow(cons.NAME_CALIBRATE_WINDOW)
-                EYES_DETECTED = face.findEyes()
-                if EYES_DETECTED:
-                    print("EYES detected!")
-                    leftEye = m.Eye(face.getROIFace(), face.getPosLeftEye())
-                    rightEye = m.Eye(face.getROIFace(), face.getPosRightEye())
-                    face.setLeftEye(leftEye)
-                    face.setRightEye(rightEye)
 
-                    leftEyePupil = leftEye.getPupil()
-                    rightEyePupil = rightEye.getPupil()
+                # leftEye = m.Eye(face.getROIFace(), face.getPosLeftEye())
+                # rightEye = m.Eye(face.getROIFace(), face.getPosRightEye())
+                # face.setLeftEye(leftEye)
+                # face.setRightEye(rightEye)
 
-                    if leftEyePupil is not None and rightEyePupil is not None:
-                        print("EYECENTERS detected")
-                        pos = mapEyes2Screen(face, calibrateP1, calibrateP2)
-                        view.showPos(pos)
-                        scalePositions(face)
-                        view.showImage(img, face, "Face")
+                leftEyePupil = face.getLeftEye().getPupil()
+                rightEyePupil = face.getRightEye().getPupil()
+
+                if leftEyePupil is not None and rightEyePupil is not None:
+                    pos = mapEyes2Screen(face, calibrateP1, calibrateP2)
+                    view.showPos(pos)
+                    view.showImage(img, face, "Face")
 
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
@@ -58,7 +53,7 @@ def main():
     cv2.destroyAllWindows()
 
 
-def getFace(parameters: m.EyeParameters) -> m.Face:
+def findFace(parameters: m.EyeParameters) -> m.Face:
     # two_eyes = False  # Not 2 eyes detected yet
 
     # to make it possible to detect faces the capture has to be in grayscale.
@@ -86,25 +81,8 @@ def add2Points(point1: constants.Point, point2: constants.Point):
     return constants.Point(point1.x + point2.x, point1.y + point2.y)
 
 
-def scalePositions(face: m.Face):
-    p_face = constants.Point(face.getPosFace().getLeftUpperCorner().x, face.getPosFace().getLeftUpperCorner().y)
-    p_leftEye = constants.Point(face.getPosLeftEye().getLeftUpperCorner().x,
-                                face.getPosLeftEye().getLeftUpperCorner().y)
-    p_leftPupil = face.getLeftEye().getPupil().getPosEyeCenter()
-    face.getLeftEye().setGlobalPositionEye(add2Points(p_face, p_leftEye))
-    face.getLeftEye().getPupil().setGlobalPosition(add2Points(face.getLeftEye().getGlobalPositionEye(), p_leftPupil))
-
-    p_rightEye = constants.Point(face.getPosRightEye().getLeftUpperCorner().x,
-                                 face.getPosRightEye().getLeftUpperCorner().y)
-    p_rightPupil = face.getRightEye().getPupil().getPosEyeCenter()
-    face.getRightEye().setGlobalPositionEye(add2Points(p_face, p_rightEye))
-    face.getRightEye().getPupil().setGlobalPosition(add2Points(p_face, add2Points(p_rightEye, p_rightPupil)))
-
-
 def createCalibrate(face: m.Face, factor: float):
     blankScreen = cons.createBlankScreen(cons.SCREEN_WIDTH, cons.SCREEN_HEIGHT)
-    print("WIDTH: " + str(cons.SCREEN_WIDTH))
-    print("HEIGHT: " + str(cons.SCREEN_HEIGHT))
     p = constants.Point(int(cons.SCREEN_WIDTH * factor), int(cons.SCREEN_HEIGHT * factor))
     print("POINT: " + str(cons.SCREEN_WIDTH * factor))
     calibrateScreen = calibrate.CalibrateScreen(blankScreen, p)
@@ -113,9 +91,12 @@ def createCalibrate(face: m.Face, factor: float):
 
 
 def mapEyes2Screen(face: m.Face, cal1: calibrate.Calibrate, cal2: calibrate.Calibrate) -> cons.Point:
-    eyeCoordinates = face.findEyeVector(face.getRightEye(), face.getEyeCorner())
+    eyeCoordinates = face.findEyeVector(face.getRightEye(), face.posRightEyeCorner)
     p1 = cal1.getCalibrateScreen().getPositionPoint()
     p2 = cal2.getCalibrateScreen().getPositionPoint()
+    # TODO check the calculations of the vectors: the values are to high
+    print("X1: " + str(cal1.getVectorX()))
+    print("X2: " + str(cal2.getVectorX()))
     alpha = interpolate(eyeCoordinates.x, cal1.getVectorX(), cal2.getVectorX(), p1.x, p2.x)
     beta = interpolate(eyeCoordinates.y, cal1.getVectorY(), cal2.getVectorY(), p1.y, p2.y)
     print("ScreenPoint: " + str(alpha) + "," + str(beta))
