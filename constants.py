@@ -9,8 +9,8 @@ EYE_CASCADE = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeg
 CAM = cv2.VideoCapture(0)  # 0 used as parameter to use the webcam of the computer/laptop
 
 SMOOTH_FACTOR = 0.005
-BLUR_WEIGHT_SIZE = 5
-PUPIL_THRESHOLD = 70
+BLUR_WEIGHT_SIZE = 21
+PUPIL_THRESHOLD = 40
 
 
 class Point:
@@ -38,7 +38,7 @@ RADIUS_EYECORNER_IND = 1
 COLOR_EYE_IND = (255, 0, 0)
 
 # Calibrate
-NUMBER_CALLIBRATE_DATA = 20
+NUMBER_CALLIBRATE_DATA = 50
 RADIUS_CALIBRATE_POINT = 10
 COLOR_CALIBRATE_POINT = (0, 0, 0)
 THICKNESS_CALIBRATE_POINT = cv2.FILLED

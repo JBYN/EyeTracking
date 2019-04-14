@@ -32,15 +32,11 @@ def main():
             else:
                 cv2.destroyWindow(cons.NAME_CALIBRATE_WINDOW)
 
-                # leftEye = m.Eye(face.getROIFace(), face.getPosLeftEye())
-                # rightEye = m.Eye(face.getROIFace(), face.getPosRightEye())
-                # face.setLeftEye(leftEye)
-                # face.setRightEye(rightEye)
-
                 leftEyePupil = face.getLeftEye().getPupil()
                 rightEyePupil = face.getRightEye().getPupil()
 
                 if leftEyePupil is not None and rightEyePupil is not None:
+                    # TODO update view with the mean of some points
                     pos = mapEyes2Screen(face, calibrateP1, calibrateP2)
                     view.showPos(pos)
                     view.showImage(img, face, "Face")
@@ -91,14 +87,11 @@ def createCalibrate(face: m.Face, factor: float):
 
 
 def mapEyes2Screen(face: m.Face, cal1: calibrate.Calibrate, cal2: calibrate.Calibrate) -> cons.Point:
-    eyeCoordinates = face.findEyeVector(face.getRightEye(), face.posRightEyeCorner)
+    eyeVectors = face.findEyeVector(face.getRightEye(), face.posRightEyeCorner)
     p1 = cal1.getCalibrateScreen().getPositionPoint()
     p2 = cal2.getCalibrateScreen().getPositionPoint()
-    # TODO check the calculations of the vectors: the values are to high
-    print("X1: " + str(cal1.getVectorX()))
-    print("X2: " + str(cal2.getVectorX()))
-    alpha = interpolate(eyeCoordinates.x, cal1.getVectorX(), cal2.getVectorX(), p1.x, p2.x)
-    beta = interpolate(eyeCoordinates.y, cal1.getVectorY(), cal2.getVectorY(), p1.y, p2.y)
+    alpha = interpolate(eyeVectors.x, cal1.getVectorX(), cal2.getVectorX(), p1.x, p2.x)
+    beta = interpolate(eyeVectors.y, cal1.getVectorY(), cal2.getVectorY(), p1.y, p2.y)
     print("ScreenPoint: " + str(alpha) + "," + str(beta))
     return cons.Point(alpha, beta)
 
