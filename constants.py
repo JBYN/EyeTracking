@@ -10,7 +10,9 @@ CAM = cv2.VideoCapture(0)  # 0 used as parameter to use the webcam of the comput
 
 SMOOTH_FACTOR = 0.005
 BLUR_WEIGHT_SIZE = 21
+# TODO  calibrate pupil threshold, depends on the light intensity
 PUPIL_THRESHOLD = 40
+NUMBER_EYES = 5
 
 
 class Point:
@@ -26,7 +28,6 @@ def createBlankScreen(width: int, height: int):
 
 # Screen property
 SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
-
 
 # Indicators
 COLOR_PUPIL_IND = (0, 255, 0)

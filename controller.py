@@ -10,6 +10,7 @@ import calibrate
 
 
 def main():
+    faces = list()
     while True:
         print("START")
         b, img = cons.CAM.read()
@@ -36,9 +37,15 @@ def main():
                 rightEyePupil = face.getRightEye().getPupil()
 
                 if leftEyePupil is not None and rightEyePupil is not None:
-                    # TODO update view with the mean of some points
-                    pos = mapEyes2Screen(face, calibrateP1, calibrateP2)
-                    view.showPos(pos)
+                    # TODO TEST updating view with mean values
+                    # add face to list of faces
+                    faces.append(face)
+                    # if list is larger than value -> map and empty list
+                    if len(faces) == cons.NUMBER_EYES:
+                        pos = mapEyes2Screen(faces, calibrateP1, calibrateP2)
+                        view.showPos(pos)
+                        faces.clear()
+
                     view.showImage(img, face, "Face")
 
         key = cv2.waitKey(1) & 0xff
@@ -86,19 +93,37 @@ def createCalibrate(face: m.Face, factor: float):
     return calibrateP
 
 
-def mapEyes2Screen(face: m.Face, cal1: calibrate.Calibrate, cal2: calibrate.Calibrate) -> cons.Point:
-    eyeVectors = face.findEyeVector(face.getRightEye(), face.posRightEyeCorner)
+def mapEyes2Screen(faces: list(m.Face), cal1: calibrate.Calibrate, cal2: calibrate.Calibrate) -> cons.Point:
+    x, y = 0
+    # Sum of the coordinates of the different faces
+    for face in faces:
+        eyeVector = face.findEyeVector(face.getRightEye(), face.posRightEyeCorner)
+        x += eyeVector.x
+        y += eyeVector.y
+    # Mean value of the coordinates
+    x = x/len(faces)
+    y = y/len(faces)
     p1 = cal1.getCalibrateScreen().getPositionPoint()
     p2 = cal2.getCalibrateScreen().getPositionPoint()
-    alpha = interpolate(eyeVectors.x, cal1.getVectorX(), cal2.getVectorX(), p1.x, p2.x)
-    beta = interpolate(eyeVectors.y, cal1.getVectorY(), cal2.getVectorY(), p1.y, p2.y)
+    alpha = interpolate(x, cal1.getVectorX(), cal2.getVectorX(), p1.x, p2.x)
+    beta = interpolate(y, cal1.getVectorY(), cal2.getVectorY(), p1.y, p2.y)
     print("ScreenPoint: " + str(alpha) + "," + str(beta))
+    # TODO Decide which part of the screen
+    center = findScreenArea(alpha, beta)
     return cons.Point(alpha, beta)
 
 
 def interpolate(x: int, x1: int, x2: int, a1: int, a2: int) -> int:
     a = a1 + (x - x1)*(a2 - a1) / (x2 - x1)
     return int(a)
+
+
+def findScreenArea(x: float, y: float)->cons.Point:
+    # ToDo think for a way to get the center of the area easily
+    if x > m.ScreenAreaBoundary.W1:
+        return None
+
+    return None
 
 
 if __name__ == "__main__":

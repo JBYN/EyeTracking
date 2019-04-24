@@ -4,10 +4,13 @@ Created on Wed Mar 27 14:30:50 2019
 
 @author: Jo
 """
+from enum import Enum
+
 import cv2
 import dlib
 import numpy as np
 import constants as cons
+from constants import Point, SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 class EyeParameters:
@@ -85,7 +88,7 @@ class Eye:
         if contours is not None:
             contours = sorted(contours, key=lambda x1: cv2.contourArea(x1), reverse=True)
             # DEBUG
-            cv2.drawContours(threshold, contours, -1, (0, 255, 0), 3)
+            # cv2.drawContours(threshold, contours, -1, (0, 255, 0), 3)
             cv2.namedWindow("DEBUG", cv2.WND_PROP_FULLSCREEN)
             cv2.setWindowProperty("DEBUG", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             cv2.imshow("DEBUG", threshold)
@@ -176,3 +179,37 @@ class Face:
             y = eye.getPupil().getGlobalPosition().y - posEyeCorner.y
             return cons.Point(x, y)
         return None
+
+
+class ScreenAreaBoundary(Enum):
+    W1 = SCREEN_WIDTH
+    W2 = int(2*SCREEN_WIDTH/3)
+    W3 = int(SCREEN_WIDTH/3)
+    W4 = 0
+
+    H1 = SCREEN_HEIGHT
+    H2 = int(2*SCREEN_HEIGHT/3)
+    H3 = int(SCREEN_HEIGHT)
+    H4 = 0
+    # LT = Rectangle(0, 0, int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
+    # MT = Rectangle(int(SCREEN_WIDTH/3), 0, int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
+    # RT = Rectangle(int(2*SCREEN_WIDTH/3), 0, SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), int(SCREEN_HEIGHT/3))
+    # LM = Rectangle(0, int(SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
+    # MM = Rectangle(int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
+    # RM = Rectangle(int(2*SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3), SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), int(SCREEN_HEIGHT/3))
+    # LD = Rectangle(0, int(2*SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
+    # MD = Rectangle(int(SCREEN_WIDTH/3), int(2*SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
+    # RD = Rectangle(int(2*SCREEN_WIDTH/3), int(2*SCREEN_HEIGHT/3), SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
+
+
+# ToDo redesign the Enum
+class CentersScreenArea(Enum):
+    LT = Point(int(SCREEN_WIDTH/6), int(SCREEN_HEIGHT/6))
+    MT = Point(int(SCREEN_WIDTH/2), int(SCREEN_HEIGHT/6))
+    RT = Point(int(5*SCREEN_WIDTH/6), int(SCREEN_HEIGHT/6))
+    LM = Point(int(SCREEN_WIDTH/6), int(SCREEN_HEIGHT/2))
+    MM = Point(int(SCREEN_WIDTH/2), int(SCREEN_HEIGHT/2))
+    RM = Point(int(5*SCREEN_WIDTH/6), int(SCREEN_HEIGHT/2))
+    LD = Point(int(SCREEN_WIDTH/6), int(5*SCREEN_HEIGHT/6))
+    MD = Point(int(SCREEN_WIDTH/2), int(5*SCREEN_HEIGHT / 6))
+    RD = Point(int(5*SCREEN_WIDTH/6), int(5*SCREEN_HEIGHT/6))
