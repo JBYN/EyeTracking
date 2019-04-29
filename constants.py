@@ -9,9 +9,10 @@ EYE_CASCADE = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeg
 CAM = cv2.VideoCapture(0)  # 0 used as parameter to use the webcam of the computer/laptop
 
 SMOOTH_FACTOR = 0.005
-BLUR_WEIGHT_SIZE = 21
+BLUR_WEIGHT_SIZE = 3
 # TODO  calibrate pupil threshold, depends on the light intensity
-PUPIL_THRESHOLD = 40
+PUPIL_THRESHOLD = 28
+AREA_THRESHOLD = 5
 NUMBER_EYES = 5
 
 

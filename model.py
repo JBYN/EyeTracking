@@ -4,13 +4,13 @@ Created on Wed Mar 27 14:30:50 2019
 
 @author: Jo
 """
-from enum import Enum
+from enum import IntEnum
 
 import cv2
 import dlib
 import numpy as np
 import constants as cons
-from constants import Point, SCREEN_HEIGHT, SCREEN_WIDTH
+from constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 class EyeParameters:
@@ -60,7 +60,8 @@ class Eye:
         self.pEye = positionEye
         self.img = img
         self.faceMarks = faceMarks
-        self.roiEye = img[positionEye.getLeftUpperCorner().y:positionEye.getLeftUpperCorner().y + positionEye.getHeight(),
+        self.roiEye = img[
+                      positionEye.getLeftUpperCorner().y:positionEye.getLeftUpperCorner().y + positionEye.getHeight(),
                       positionEye.getLeftUpperCorner().x:positionEye.getLeftUpperCorner().x + positionEye.getWidth()]
         self.eyePupil = None
         self.main()
@@ -80,22 +81,25 @@ class Eye:
     def createPupil(self):
         # preprocessing
         blur_Eye = cv2.GaussianBlur(self.roiEye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
-        _, threshold = cv2.threshold(blur_Eye, cons.PUPIL_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
-
+        _, threshold = cv2.threshold(self.roiEye, cons.PUPIL_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
+        #DEBUG
+        # cv2.namedWindow("Eye", cv2.WND_PROP_FULLSCREEN)
+        # cv2.setWindowProperty("Eye", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        # cv2.imshow("Eye", self.roiEye)
         contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # get position pupil
         if contours is not None:
             contours = sorted(contours, key=lambda x1: cv2.contourArea(x1), reverse=True)
             # DEBUG
-            # cv2.drawContours(threshold, contours, -1, (0, 255, 0), 3)
-            cv2.namedWindow("DEBUG", cv2.WND_PROP_FULLSCREEN)
-            cv2.setWindowProperty("DEBUG", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-            cv2.imshow("DEBUG", threshold)
+            # cv2.namedWindow("DEBUG", cv2.WND_PROP_FULLSCREEN)
+            # cv2.setWindowProperty("DEBUG", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            # cv2.imshow("DEBUG", threshold)
             for cnt in contours:
                 print("PUPIL_DETECTED")
                 (x, y, w, h) = cv2.boundingRect(cnt)
                 self.eyePupil = EyePupil(self.getPosEye().getLeftUpperCorner(), cons.Point(int(x + w / 2), int(y + h / 2)))
+                break
 
 
 class Face:
@@ -177,39 +181,30 @@ class Face:
         if eye.getPupil() is not None:
             x = eye.getPupil().getGlobalPosition().x - posEyeCorner.x
             y = eye.getPupil().getGlobalPosition().y - posEyeCorner.y
+            print("Vector: " + str(x) + ", " + str(y))
             return cons.Point(x, y)
         return None
 
 
-class ScreenAreaBoundary(Enum):
+class ScreenAreaBoundary(IntEnum):
     W1 = SCREEN_WIDTH
-    W2 = int(2*SCREEN_WIDTH/3)
-    W3 = int(SCREEN_WIDTH/3)
+    W2 = 2*SCREEN_WIDTH/3
+    W3 = SCREEN_WIDTH/3
     W4 = 0
 
     H1 = SCREEN_HEIGHT
-    H2 = int(2*SCREEN_HEIGHT/3)
-    H3 = int(SCREEN_HEIGHT)
+    H2 = 2*SCREEN_HEIGHT/3
+    H3 = SCREEN_HEIGHT
     H4 = 0
-    # LT = Rectangle(0, 0, int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
-    # MT = Rectangle(int(SCREEN_WIDTH/3), 0, int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
-    # RT = Rectangle(int(2*SCREEN_WIDTH/3), 0, SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), int(SCREEN_HEIGHT/3))
-    # LM = Rectangle(0, int(SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
-    # MM = Rectangle(int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3))
-    # RM = Rectangle(int(2*SCREEN_WIDTH/3), int(SCREEN_HEIGHT/3), SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), int(SCREEN_HEIGHT/3))
-    # LD = Rectangle(0, int(2*SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
-    # MD = Rectangle(int(SCREEN_WIDTH/3), int(2*SCREEN_HEIGHT/3), int(SCREEN_WIDTH/3), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
-    # RD = Rectangle(int(2*SCREEN_WIDTH/3), int(2*SCREEN_HEIGHT/3), SCREEN_WIDTH-(2*int(SCREEN_WIDTH/3)), SCREEN_HEIGHT-(2*int(SCREEN_HEIGHT/3)))
 
 
-# ToDo redesign the Enum
-class CentersScreenArea(Enum):
-    LT = Point(int(SCREEN_WIDTH/6), int(SCREEN_HEIGHT/6))
-    MT = Point(int(SCREEN_WIDTH/2), int(SCREEN_HEIGHT/6))
-    RT = Point(int(5*SCREEN_WIDTH/6), int(SCREEN_HEIGHT/6))
-    LM = Point(int(SCREEN_WIDTH/6), int(SCREEN_HEIGHT/2))
-    MM = Point(int(SCREEN_WIDTH/2), int(SCREEN_HEIGHT/2))
-    RM = Point(int(5*SCREEN_WIDTH/6), int(SCREEN_HEIGHT/2))
-    LD = Point(int(SCREEN_WIDTH/6), int(5*SCREEN_HEIGHT/6))
-    MD = Point(int(SCREEN_WIDTH/2), int(5*SCREEN_HEIGHT / 6))
-    RD = Point(int(5*SCREEN_WIDTH/6), int(5*SCREEN_HEIGHT/6))
+class CenterXScreenArea(IntEnum):
+    L = int(SCREEN_WIDTH/6)
+    M = int(SCREEN_WIDTH/2)
+    R = int(5*SCREEN_WIDTH/6)
+
+
+class CenterYScreenArea(IntEnum):
+    T = int(SCREEN_HEIGHT/6)
+    M = int(SCREEN_HEIGHT/2)
+    D = int(5*SCREEN_HEIGHT/6)
