@@ -19,6 +19,11 @@ def main():
         if face is not None:
             # Calibrate
             if not cons.CALIBRATESCREEN_P1:
+                # Set threshold for the light intensity
+                screen = createCalibrateScreen(0.5)
+                T = calibrate.CalibrateLightIntensity(face, screen)
+                cons.PUPIL_THRESHOLD = T.getThreshold()
+
                 calibrateP1 = createCalibrate(face, cons.CALIBRATE_P1_FACTOR)
                 cons.CALIBRATESCREEN_P1 = True
             elif calibrateP1.numberOfCalibrateData < cons.NUMBER_CALLIBRATE_DATA:
@@ -35,7 +40,6 @@ def main():
                 leftEyePupil = face.getLeftEye().getPupil()
                 rightEyePupil = face.getRightEye().getPupil()
 
-                #if leftEyePupil is not None and rightEyePupil is not None:
                 if rightEyePupil is not None:
                     # TODO TEST updating view with mean values
                     # add face to list of faces
@@ -85,11 +89,14 @@ def add2Points(point1: cons.Point, point2: cons.Point):
     return cons.Point(point1.x + point2.x, point1.y + point2.y)
 
 
-def createCalibrate(face: m.Face, factor: float):
+def createCalibrateScreen(factor: float) -> calibrate.CalibrateScreen:
     blankScreen = cons.createBlankScreen(cons.SCREEN_WIDTH, cons.SCREEN_HEIGHT)
     p = cons.Point(int(cons.SCREEN_WIDTH * factor), int(cons.SCREEN_HEIGHT * factor))
-    print("POINT: " + str(cons.SCREEN_WIDTH * factor))
-    calibrateScreen = calibrate.CalibrateScreen(blankScreen, p)
+    return calibrate.CalibrateScreen(blankScreen, p)
+
+
+def createCalibrate(face: m.Face, factor: float):
+    calibrateScreen = createCalibrateScreen(factor)
     calibrateP = calibrate.Calibrate(calibrateScreen, face)
     return calibrateP
 

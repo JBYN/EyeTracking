@@ -69,8 +69,8 @@ class Eye:
     def main(self):
         self.createPupil()
 
-    # def getFaceImage(self) -> np.ndarray:
-    #     return self.imgFace
+    def getROI(self) -> np.ndarray:
+        return self.roiEye
 
     def getPosEye(self) -> Rectangle:
         return self.pEye
@@ -140,7 +140,7 @@ class Face:
     def getROIFace(self) -> np.ndarray:
         return self.roiFace
 
-    def getRightEye(self):
+    def getRightEye(self) -> Eye:
         return self.rightEye
 
     def getPosLeftEyeCorner(self):

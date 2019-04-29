@@ -32,7 +32,7 @@ class CalibrateScreen:
 
 
 class CalibrateLightIntensity:
-
+    # TODO works but is finished before the screen with spot to look is showed. Time delay, delays showing screen.
     def __init__(self, face, calibrateScreen: CalibrateScreen):
         self.face = face
         self.calibrateScreen = calibrateScreen
@@ -44,12 +44,13 @@ class CalibrateLightIntensity:
 
     def main(self):
         view.show(self.calibrateScreen.getScreen(), cons.NAME_CALIBRATE_WINDOW)
-        eye = self.face.getRightEye()
+        eye = self.face.getRightEye().getROI()
         # pre-process
-        blur_Eye = cv2.GaussianBlur(eye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
-        self.findThreshold(self.threshold, cons.AREA_THRESHOLD, blur_Eye)
+        #blur_Eye = cv2.GaussianBlur(eye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
+        self.findThreshold(self.threshold, cons.AREA_THRESHOLD, eye)
 
     def findThreshold(self, lightThreshold: int, areaThreshold: int, eye: m.Eye):
+        area = 0
         _, threshold = cv2.threshold(eye, lightThreshold, 255, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if contours is None:
@@ -58,7 +59,7 @@ class CalibrateLightIntensity:
         else:
             contours = sorted(contours, key=lambda x1: cv2.contourArea(x1), reverse=True)
             for cnt in contours:
-                print("PUPIL_DETECTED")
+                print("PUPIL_DETECTED!")
                 area = cv2.contourArea(cnt)
                 break
             if area >= areaThreshold:
