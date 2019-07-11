@@ -44,9 +44,9 @@ class CalibrateLightIntensity:
 
     def main(self):
         view.show(self.calibrateScreen.getScreen(), cons.NAME_CALIBRATE_WINDOW)
-        eye = self.face.getRightEye().getROI()
+        eye = self.face.getRightEye().get_roi()
         # pre-process
-        #blur_Eye = cv2.GaussianBlur(eye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
+        # blur_Eye = cv2.GaussianBlur(eye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
         self.findThreshold(self.threshold, cons.AREA_THRESHOLD, eye)
 
     def findThreshold(self, lightThreshold: int, areaThreshold: int, eye: m.Eye):

@@ -9,14 +9,29 @@ import calibrate
 
 
 def main():
+    if cons.COLLECT_DATA:
+        collect_data()
+        return 0
+
     faces = list()
+    prev_pos_face = False
     while True:
         print("START")
         b, img = cons.CAM.read()
-        parameters = m.EyeParameters(cons.FACE_CASCADE, cons.EYE_CASCADE, b, img)
-        face = findFace(parameters)
+        # to make it possible to detect faces the capture has to be in grayscale.
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if prev_pos_face is False:
+            parameters = m.FaceParameters(cons.FACE_CASCADE, b, gray)
+            face = find_face(parameters)
+        else:
+            Updated = face.update(gray)
+            if Updated is False:
+                print("FALSE UPDATE")
+                parameters = m.FaceParameters(cons.FACE_CASCADE, b, gray)
+                face = find_face(parameters)
 
         if face is not None:
+            prev_pos_face = True
             # Calibrate
             if not cons.CALIBRATESCREEN_P1:
                 # Set threshold for the light intensity
@@ -36,45 +51,45 @@ def main():
                 calibrateP2.updateCalibrate(face)
             else:
                 cv2.destroyWindow(cons.NAME_CALIBRATE_WINDOW)
+                if calibrateP1.getVectorY() == calibrateP2.getVectorY():
+                    cons.CALIBRATESCREEN_P1 = False
+                    calibrateP1 = None
+                    cons.CALIBRATESCREEN_P2 = False
+                    calibrateP2 = None
+                else:
+                    leftEyePupil = face.getLeftEye().get_pupil()
+                    rightEyePupil = face.getRightEye().get_pupil()
 
-                leftEyePupil = face.getLeftEye().getPupil()
-                rightEyePupil = face.getRightEye().getPupil()
-
-                if rightEyePupil is not None:
-                    # TODO TEST updating view with mean values
-                    # add face to list of faces
-                    faces.append(face)
-                    # if list is larger than value -> map and empty list
-                    if len(faces) == cons.NUMBER_EYES:
-                        pos = mapEyes2Screen(faces, calibrateP1, calibrateP2)
-                        if pos is not None:
-                            view.showPos(pos)
-                        faces.clear()
-
-                    view.showImage(img, face, "Face")
+                    if rightEyePupil is not None:
+                        # TODO TEST updating view with mean values
+                        # add face to list of faces
+                        faces.append(face)
+                        # if list is larger than value -> map and empty list
+                        if len(faces) == cons.NUMBER_EYES:
+                            pos = mapEyes2Screen(faces, calibrateP1, calibrateP2)
+                            if pos is not None:
+                                view.showPos(pos)
+                                view.showImage(img, face, "Face")
+                            faces.clear()
 
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
             break
-
     cons.CAM.release()
     cv2.destroyAllWindows()
 
 
-def findFace(parameters: m.EyeParameters) -> m.Face:
-    # two_eyes = False  # Not 2 eyes detected yet
+def find_face(parameters: m.FaceParameters) -> m.Face:
 
-    # to make it possible to detect faces the capture has to be in grayscale.
-    gray = cv2.cvtColor(parameters.image, cv2.COLOR_BGR2GRAY)
-    faces = parameters.face_cascade.detectMultiScale(gray, 1.3, 5,
+    faces = parameters.face_cascade.detectMultiScale(parameters.image, 1.3, 5,
                                                      0 | cv2.CASCADE_SCALE_IMAGE | cv2.CASCADE_FIND_BIGGEST_OBJECT)
 
     if faces != ():
         print("FACE detected!")
         # getting the coordinates of the detected faces
         for (x, y, w, h) in faces:
-            posFace = dlib.rectangle(left=int(x), top=int(y), right=int(x + w), bottom=int(y + h))
-            face = m.Face(gray, posFace)
+            pos_face = dlib.rectangle(left=int(x), top=int(y), right=int(x + w), bottom=int(y + h))
+            face = m.Face(parameters.image, pos_face)
             return face
 
     else:
@@ -155,6 +170,67 @@ def findScreenArea(x: float, y: float) -> cons.Point:
         return None
 
     return cons.Point(X, Y)
+
+########################################################################################################################
+####################### CODE TO COLLECT DATA TO DETERMINE "PUPIL_TRHESHOLD" ############################################
+
+
+def collect_data():
+    prev_pos_face = False
+    num = 0
+    n = 1
+    while True:
+        print("START")
+        b, img = cons.CAM.read()
+        # to make it possible to detect faces the capture has to be in grayscale.
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if prev_pos_face is False:
+            parameters = m.FaceParameters(cons.FACE_CASCADE, b, gray)
+            face = find_face(parameters)
+        else:
+            updated = face.update(gray)
+            if updated is False:
+                print("FALSE UPDATE")
+                parameters = m.FaceParameters(cons.FACE_CASCADE, b, gray)
+                face = find_face(parameters)
+
+        if face is not None:
+            prev_pos_face = True
+            # Calibrate
+            if not cons.CALIBRATESCREEN_P1:
+                screen = create_calibrate_screen(0.5)
+                view.show(screen.getScreen(), "SCREEN")
+                cons.CALIBRATESCREEN_P1 = True
+            else:
+                if num == 3:
+                    cons.PUPIL_THRESHOLD += 2
+                    n += 1
+                    num = 0
+                else:
+                    num += 1
+            print(str(num))
+        cv2.waitKey(1) & 0xff
+        if n == 75:
+            # Todo collect images to set light intensity threshold
+            num = 0
+            f = open("area.csv", "w+")
+            for eye in cons.eyes:
+                r = cv2.resize(eye, (750, 500), cv2.INTER_AREA)
+                cv2.imwrite('Eyes/' + str(num) + '.jpg', r)
+                f.write(str(cons.area[num]) + '\n')
+                num += 1
+            break
+    f.close()
+    cons.CAM.release()
+    cv2.destroyAllWindows()
+
+
+def create_calibrate_screen(factor: float) -> calibrate.CalibrateScreen:
+    blank_screen = cons.createBlankScreen(cons.SCREEN_WIDTH, cons.SCREEN_HEIGHT)
+    p = cons.Point(int(cons.SCREEN_WIDTH * factor), int(cons.SCREEN_HEIGHT * factor))
+    return calibrate.CalibrateScreen(blank_screen, p)
+
+########################################################################################################################
 
 
 if __name__ == "__main__":

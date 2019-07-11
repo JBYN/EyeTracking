@@ -26,26 +26,26 @@ def drawEyeCorners(img: np.ndarray, face: c.Face):
 
 
 def drawEyePupils(img: np.ndarray, face: c.Face):
-    c_l = face.getLeftEye().getPupil().getGlobalPosition()
-    cv2.circle(img, (c_l.x, c_l.y), cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
+    #c_l = face.getLeftEye().getPupil().getGlobalPosition()
+    #cv2.circle(img, (c_l.x, c_l.y), cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
 
-    c_r = face.getRightEye().getPupil().getGlobalPosition()
+    c_r = face.getRightEye().get_pupil().get_global_position()
     cv2.circle(img, (c_r.x, c_r.y), cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
 
 
 def drawEyeRegion(img: np.ndarray, face: c.Face):
     # left eye region
-    x_l = face.getLeftEye().getPosEye().getLeftUpperCorner().x
-    y_l = face.getLeftEye().getPosEye().getLeftUpperCorner().y
+    x_l = face.getLeftEye().get_pos_eye().getLeftUpperCorner().x
+    y_l = face.getLeftEye().get_pos_eye().getLeftUpperCorner().y
     cv2.rectangle(img, (x_l, y_l),
-                  (x_l + face.getLeftEye().getPosEye().width, y_l + face.getLeftEye().getPosEye().height),
+                  (x_l + face.getLeftEye().get_pos_eye().width, y_l + face.getLeftEye().get_pos_eye().height),
                   cons.COLOR_EYE_IND)
 
     # right eye region
-    x_r = face.getRightEye().getPosEye().getLeftUpperCorner().x
-    y_r = face.getRightEye().getPosEye().getLeftUpperCorner().y
+    x_r = face.getRightEye().get_pos_eye().getLeftUpperCorner().x
+    y_r = face.getRightEye().get_pos_eye().getLeftUpperCorner().y
     cv2.rectangle(img, (x_r, y_r),
-                  (x_r + face.getRightEye().getPosEye().width, y_r + face.getRightEye().getPosEye().height),
+                  (x_r + face.getRightEye().get_pos_eye().width, y_r + face.getRightEye().get_pos_eye().height),
                   cons.COLOR_EYE_IND)
 
 
