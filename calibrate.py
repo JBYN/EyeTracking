@@ -7,7 +7,6 @@ Created on Wed Jan 23 14:39:50 2019
 
 import cv2
 import numpy as np
-import statistics as stat
 import constants as cons
 import model as m
 import view
@@ -15,16 +14,20 @@ import view
 
 class CalibrateScreen:
 
-    def __init__(self, screen: np.ndarray, posPoint: cons.Point):
-        self.point = posPoint
+    def __init__(self, screen: np.ndarray, pos_point: cons.Point, name: str):
+        self.point = pos_point
         self.screen = screen
+        self.name = name
         self.main()
 
-    def getPositionPoint(self) -> cons.Point:
+    def get_position_point(self) -> cons.Point:
         return self.point
 
-    def getScreen(self) -> np.ndarray:
+    def get_screen(self) -> np.ndarray:
         return self.screen
+
+    def get_name(self) -> str:
+        return self.name
 
     def main(self):
         cv2.circle(self.screen, (self.point.x, self.point.y), cons.RADIUS_CALIBRATE_POINT, cons.COLOR_CALIBRATE_POINT,
@@ -32,87 +35,133 @@ class CalibrateScreen:
 
 
 class CalibrateLightIntensity:
-    # TODO works but is finished before the screen with spot to look is showed. Time delay, delays showing screen.
-    def __init__(self, face, calibrateScreen: CalibrateScreen):
+    def __init__(self, face: m.Face):
         self.face = face
-        self.calibrateScreen = calibrateScreen
         self.threshold = 0
+        self.values_threshold = list()
         self.main()
 
-    def getThreshold(self):
-        return self.threshold
+    def get_threshold(self) -> float:
+        return np.mean(self.values_threshold)
 
     def main(self):
-        view.show(self.calibrateScreen.getScreen(), cons.NAME_CALIBRATE_WINDOW)
-        eye = self.face.getRightEye().get_roi()
-        # pre-process
-        # blur_Eye = cv2.GaussianBlur(eye, (cons.BLUR_WEIGHT_SIZE, cons.BLUR_WEIGHT_SIZE), 0, 0)
-        self.findThreshold(self.threshold, cons.AREA_THRESHOLD, eye)
+        eye = self.face.get_right_eye().get_roi()
+        self.set_threshold_light_intensity(self.threshold, cons.AREA_RATIO_THRESHOLD, eye)
 
-    def findThreshold(self, lightThreshold: int, areaThreshold: int, eye: m.Eye):
+    def update(self, face: m.Face):
+        self.face = face
+        self.main()
+
+    def set_threshold_light_intensity(self, light_threshold: int, area_threshold: int, eye: np.ndarray):
+        t = light_threshold
         area = 0
-        _, threshold = cv2.threshold(eye, lightThreshold, 255, cv2.THRESH_BINARY_INV)
+        _, threshold = cv2.threshold(eye, light_threshold, 255, cv2.THRESH_BINARY_INV)
         contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         if contours is None:
-            self.threshold += 2
-            self.findThreshold(self.threshold, areaThreshold, eye)
+            t += 1
+            self.set_threshold_light_intensity(t, area_threshold, eye)
         else:
             contours = sorted(contours, key=lambda x1: cv2.contourArea(x1), reverse=True)
             for cnt in contours:
-                print("PUPIL_DETECTED!")
                 area = cv2.contourArea(cnt)
                 break
-            if area >= areaThreshold:
+            if (area/eye.size) >= area_threshold:
+                self.values_threshold.append(t)
                 return None
             else:
-                self.threshold += 2
-                self.findThreshold(self.threshold, areaThreshold, eye)
+                t += 1
+                self.set_threshold_light_intensity(t, area_threshold, eye)
 
         return None
 
 
 class Calibrate:
 
-    def __init__(self, calibrateScreen: CalibrateScreen, face):
-        self.calibrateScreen = calibrateScreen
+    def __init__(self, calibrate_screen: CalibrateScreen, face):
+        self.calibrateScreen = calibrate_screen
         self.face = face
-        self.vectorX = list()
-        self.vectorY = list()
-        self.numberOfCalibrateData = 0
+        self.v_left_eye = list()
+        self.v_right_eye = list()
+        self.mean_left_eye = None
+        self.mean_right_eye = None
         self.main()
 
     def main(self):
-        view.show(self.calibrateScreen.getScreen(), cons.NAME_CALIBRATE_WINDOW)
-        self.findVector()
+        view.show(self.calibrateScreen.get_screen(), self.calibrateScreen.get_name())
+        self.find_vectors()
 
-    def getCalibrateScreen(self) -> CalibrateScreen:
+    def update_calibrate(self, face: m.Face):
+        self.face = face
+        if face.get_right_eye() and face.get_pos_right_eye_corner():
+            if face.get_left_eye() and face.get_pos_left_eye_corner():
+                self.find_vectors()
+        if self.get_number_of_data() == cons.NUMBER_CALLIBRATE_DATA:
+            self.mean_left_eye, self.mean_right_eye = self.calculate_mean(self.v_left_eye, self.v_right_eye)
+
+    def get_calibrate_screen(self) -> CalibrateScreen:
         return self.calibrateScreen
 
-    def getVectorX(self) -> int:
-        return int(stat.mean(self.vectorX))
+    def get_mean_v_left_eye(self) -> cons.Point:
+        return self.mean_left_eye
 
-    def getVectorY(self) -> int:
-        return int(stat.mean(self.vectorY))
+    def get_mean_v_right_eye(self) -> cons.Point:
+        return self.mean_right_eye
 
-    def setFace(self, face: m.Face):
-        self.face = face
+    def get_number_of_data(self) -> int:
+        return len(self.v_left_eye)
 
-    def updateVectors(self, vector: cons.Point):
-        self.vectorX.append(vector.x)
-        self.vectorY.append(vector.y)
+    def update_vectors(self, v_left_eye: cons.Point, v_right_eye: cons.Point):
+        self.v_left_eye.append(v_left_eye)
+        self.v_right_eye.append(v_right_eye)
 
-    def findVector(self):
-        vector = self.findEyeVector(self.face.getRightEye(), self.face.posRightEyeCorner)
-        if vector is not None:
-            self.updateVectors(vector)
-            self.numberOfCalibrateData += 1
-            print("NUMBER: " + str(self.numberOfCalibrateData))
+    def find_vectors(self):
+        v_left_eye, v_right_eye = self.find_eye_vector()
+        if v_right_eye and v_left_eye:
+            self.update_vectors(v_left_eye, v_right_eye)
 
-    def updateCalibrate(self, face: m.Face):
-        self.face = face
-        self.findVector()
+    def find_eye_vectors(self) -> (cons.Point, cons.Point):
+        return self.face.find_eye_vector()
 
-    def findEyeVector(self, eye: m.Eye, posEyeCorner: cons.Point) -> cons.Point:
-        return self.face.findEyeVector(eye, posEyeCorner)
+    def calculate_mean(self, list1: list, list2: list) -> (cons.Point, cons.Point):
+        list1 = self.remove_outliers(list1)
+        list2 = self.remove_outliers(list2)
+        x1 = list()
+        x2 = list()
+        y1 = list()
+        y2 = list()
+        for l in list1:
+            x1.append(l.x)
+            y1.append(l.y)
+        for l2 in list2:
+            x2.append(l2.x)
+            y2.append(l2.y)
+        x1_mean = np.mean(x1)
+        x2_mean = np.mean(x2)
+        y1_mean = np.mean(y1)
+        y2_mean = np.mean(y2)
+        return cons.Point(int(x1_mean), int(y1_mean)), cons.Point(int(x2_mean), int(y2_mean))
 
+    def remove_outliers(self, l: list) -> list:
+        i = 0
+        dist = list()
+        for p in l:
+            dist.append(p.get_distance_r0())
+        l_bound, u_bound = self.calculate_bounds(sorted(dist))
 
+        for d in dist:
+            if l_bound > d or u_bound < d:
+                del l[i]
+            else:
+                i += 1
+        return l
+
+    def close_screen(self):
+        cv2.destroyWindow(self.calibrateScreen.get_name())
+
+    @staticmethod
+    def calculate_bounds(sorted_list: list) -> (float, float):
+        q1, q3 = np.percentile(sorted_list, [25, 75])
+        iqr = q3 - q1
+        lower_bound = q1 - (1.5 * iqr)
+        upper_bound = q3 + (1.5 * iqr)
+        return lower_bound, upper_bound

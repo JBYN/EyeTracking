@@ -6,16 +6,16 @@ import controller as detect
 import calibrate
 import model as c
 
-#constants to show errors on the image
+# constants to show errors on the image
 font = cv2.FONT_ITALIC
-color = (0,0,255)
+color = (0, 0, 255)
 stroke = 2
 line_type = cv2.LINE_AA
 
 face_cascade = cv2.CascadeClassifier('data/haarcascades/haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeglasses.xml')
 
-#Callibration
+# Calibration
 calibrate.callibrate()
 #Middle borders
 print("Middle: " + str(calibrate.middle[0]))
