@@ -21,7 +21,7 @@ def main():
     enough_data_light_intensity = False  # Boolean to indicate the end of the calibration of the light threshold.
     cal_light_intensity = False  # Boolean to indicate whether calibration is started.
     screen_bool_test_system = False
-    screen_bool_light = False  # Boolean to indicate whether the calibrating screen for the light threshold is showed.
+    screen_light_threshold = False  # Boolean to indicate whether the calibrating screen for the light threshold is showed.
     screen_bool = False
     prev_face = False  # Boolean to indicate whether a face was already found are not.
     print("START")
@@ -47,38 +47,40 @@ def main():
             prev_face = True
             # Check whether the two eyes exist/are found
             if face.get_right_eye() and face.get_left_eye():
+                print("EYES detected")
                 # Calibrate
                 # First calibrate to know the light intensity
                 if enough_data_light_intensity is False:
-                    if screen_bool_light is False:
-                        screen = create_calibrate_screen(0.5)
+                    if screen_light_threshold is False:
+                        screen = create_calibrate_screen("calibrate light intensity", 0.5)
                         # show the calibrate screen
-                        view.show(screen.get_screen(), "calibrate light intensity")
-                        screen_bool_light = True
+                        view.show(screen.get_screen(), screen.get_name())
+                        screen_light_threshold = True
                     # If calibration isn't started make a calibrating object
                     elif cal_light_intensity is False:
                         t = calibrate.CalibrateLightIntensity(face)
+                        cal_light_intensity = True
                     else:
                         # update the calibrating object
                         t.update(face)
-                        if len(t.get_threshold()) > 50:
+                        if t.get_number_of_data() > 50:
                             enough_data_light_intensity = True
                 # If the calibration screen for the light intensity is still showed:
                 #       Set the "LIGHT_INTENSITY_THRESHOLD"
                 #       Close the window with the calibration screen
-                elif screen_bool_light:
+                elif screen_light_threshold:
                     cons.LIGHT_INTENSITY_THRESHOLD = t.get_threshold()
-                    cv2.destroyWindow("calibrate light intensity")
-                    screen_bool_light = False
+                    screen.close_screen()
+                    screen_light_threshold = False
                 # Case to collect data with a LED as reference point to compare
                 # the data of the eye corner and pupil with
                 elif cons.REFERENCE:
                     if screen_bool is False:
-                        screen = create_calibrate_screen(0.5)
-                        view.show(screen.get_screen(), "Collect_data_reference")
+                        screen = create_calibrate_screen("Collect_data_reference", 0.5)
+                        view.show(screen.get_screen(), screen.get_name())
                         screen_bool = True
                     elif len(cons.led_position) == 500:
-                        cv2.destroyWindow("Collect_data_reference")
+                        screen.close_screen()
                         cons.CAM.release()
                         write_data2file_reference()
                         return 0
@@ -117,8 +119,8 @@ def main():
                                             if screen_bool_test_system is False:
                                                 x_factor = 0.875 - (test_case % 3)*0.375
                                                 y_factor = 0.125*((test_case // 3)*3+1)
-                                                screen = create_calibrate_screen(x_factor, y_factor)
-                                                view.show(screen.get_screen(), "TEST")
+                                                screen = create_calibrate_screen("TEST", x_factor, y_factor)
+                                                view.show(screen.get_screen(), screen.get_name())
                                                 screen_bool_test_system = True
                                             else:
                                                 # TODO check results for the mean of some faces
@@ -136,7 +138,7 @@ def main():
                                             screen_bool_test_system = False
                                     else:
                                         cons.TEST_SYSTEM = False
-                                        cv2.destroyWindow("TEST")
+                                        screen.close_screen()
                                         cons.CAM.release()
                                         write_data2file_test(test_system)
                                         return 0

@@ -33,6 +33,9 @@ class CalibrateScreen:
         cv2.circle(self.screen, (self.point.x, self.point.y), cons.RADIUS_CALIBRATE_POINT, cons.COLOR_CALIBRATE_POINT,
                    cons.THICKNESS_CALIBRATE_POINT)
 
+    def close_screen(self):
+        cv2.destroyWindow(self.name)
+
 
 class CalibrateLightIntensity:
     def __init__(self, face: m.Face):
@@ -43,6 +46,9 @@ class CalibrateLightIntensity:
 
     def get_threshold(self) -> float:
         return np.mean(self.values_threshold)
+
+    def get_number_of_data(self) -> int:
+        return len(self.values_threshold)
 
     def main(self):
         eye = self.face.get_right_eye().get_roi()
@@ -115,12 +121,12 @@ class Calibrate:
         self.v_right_eye.append(v_right_eye)
 
     def find_vectors(self):
-        v_left_eye, v_right_eye = self.find_eye_vector()
-        if v_right_eye and v_left_eye:
+        if self.find_eye_vectors():
+            v_left_eye, v_right_eye = self.find_eye_vectors()
             self.update_vectors(v_left_eye, v_right_eye)
 
     def find_eye_vectors(self) -> (cons.Point, cons.Point):
-        return self.face.find_eye_vector()
+        return self.face.find_eye_vectors()
 
     def calculate_mean(self, list1: list, list2: list) -> (cons.Point, cons.Point):
         list1 = self.remove_outliers(list1)
@@ -156,7 +162,7 @@ class Calibrate:
         return l
 
     def close_screen(self):
-        cv2.destroyWindow(self.calibrateScreen.get_name())
+        self.calibrateScreen.close_screen()
 
     @staticmethod
     def calculate_bounds(sorted_list: list) -> (float, float):

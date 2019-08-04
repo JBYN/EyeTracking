@@ -106,7 +106,7 @@ class Eye:
                 # TODO check the difference between the width and the height
                 self.eyePupil = EyePupil(self.get_pos_eye().get_upper_left_corner(),
                                          cons.Point(int(x + w / 2), int(y + h / 2)))
-
+                print("height: " + str(h) + "; width: " + str(w))
                 # collect data to set threshold for light intensity
                 if cons.COLLECT_DATA:
                     cons.area_pupil.append(cv2.contourArea(cnt))

@@ -3,9 +3,9 @@ import dlib
 import numpy as np
 import pyautogui
 
-COLLECT_DATA = False
-REFERENCE = False
-TEST_SYSTEM = False
+COLLECT_DATA = False  # Collect data to define a good light threshold
+REFERENCE = False  # Save data according to the position of the pupil and eye corner to a reference(LED)
+TEST_SYSTEM = False  # Get data to analyse the working of the system
 
 FACE_CASCADE = cv2.CascadeClassifier('data/haarcascades/haarcascade_frontalface_default.xml')
 # EYE_CASCADE = cv2.CascadeClassifier('data/haarcascades/haarcascade_eye_tree_eyeglasses.xml')
