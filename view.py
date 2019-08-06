@@ -19,10 +19,10 @@ def show_image(img: np.ndarray, face: c.Face, name: str):
 
 
 def draw_eye_corners(img: np.ndarray, face: c.Face):
-    cv2.circle(img, (face.get_pos_left_eye_corner().x, face.get_pos_left_eye_corner().y),
+    cv2.circle(img, (face.get_pos_outer_left_eye_corner().x, face.get_pos_outer_left_eye_corner().y),
                cons.RADIUS_EYECORNER_IND, cons.COLOR_EYECORNER_IND)
-    cv2.circle(img, (face.get_pos_right_eye_corner().x,
-                     face.get_pos_right_eye_corner().y), cons.RADIUS_EYECORNER_IND, cons.COLOR_EYECORNER_IND)
+    cv2.circle(img, (face.get_pos_outer_right_eye_corner().x,
+                     face.get_pos_outer_right_eye_corner().y), cons.RADIUS_EYECORNER_IND, cons.COLOR_EYECORNER_IND)
 
 
 def draw_eye_pupils(img: np.ndarray, face: c.Face):

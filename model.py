@@ -146,9 +146,11 @@ class Face:
         self.faceMarks = cons.FACEMARK_PREDICTOR(img, position_face)
 
         self.leftEye: Eye = None
-        self.posLeftEyeCorner = cons.Point(self.faceMarks.part(45).x, self.faceMarks.part(45).y)
+        self.posOuterLeftEyeCorner = cons.Point(self.faceMarks.part(45).x, self.faceMarks.part(45).y)
+        self.posInnerLeftEyeCorner = cons.Point(self.faceMarks.part(42).x, self.faceMarks.part(42).y)
         self.rightEye: Eye = None
-        self.posRightEyeCorner = cons.Point(self.faceMarks.part(36).x, self.faceMarks.part(36).y)
+        self.posOuterRightEyeCorner = cons.Point(self.faceMarks.part(36).x, self.faceMarks.part(36).y)
+        self.posInnerRightEyeCorner = cons.Point(self.faceMarks.part(39).x, self.faceMarks.part(39).y)
 
         self.main()
 
@@ -176,8 +178,8 @@ class Face:
                         cons.pupil_position.append(self.rightEye.get_pupil().get_global_position_center().to_string)
                         cons.led_position.append(led_detected.to_string)
                         cons.led_position.append(led_detected.to_string)
-                        cons.corner_position.append(self.posLeftEyeCorner.to_string)
-                        cons.corner_position.append(self.posRightEyeCorner.to_string)
+                        cons.corner_position.append(self.posOuterLeftEyeCorner.to_string)
+                        cons.corner_position.append(self.posOuterRightEyeCorner.to_string)
 
     def update(self, img: np.ndarray) -> bool:
         movement_detected = self.detect_movement(img)
@@ -185,8 +187,10 @@ class Face:
             return False
         else:
             self.faceMarks = cons.FACEMARK_PREDICTOR(img, self.pFace)
-            self.posLeftEyeCorner = cons.Point(self.faceMarks.part(45).x, self.faceMarks.part(45).y)
-            self.posRightEyeCorner = cons.Point(self.faceMarks.part(36).x, self.faceMarks.part(36).y)
+            self.posOuterLeftEyeCorner = cons.Point(self.faceMarks.part(45).x, self.faceMarks.part(45).y)
+            self.posOuterRightEyeCorner = cons.Point(self.faceMarks.part(36).x, self.faceMarks.part(36).y)
+            self.posInnerLeftEyeCorner = cons.Point(self.faceMarks.part(42).x, self.faceMarks.part(42).y)
+            self.posInnerRightEyeCorner = cons.Point(self.faceMarks.part(39).x, self.faceMarks.part(39).y)
 
             self.main()
             return True
@@ -216,11 +220,17 @@ class Face:
     def get_right_eye(self) -> Eye:
         return self.rightEye
 
-    def get_pos_left_eye_corner(self) -> cons.Point:
-        return self.posLeftEyeCorner
+    def get_pos_outer_left_eye_corner(self) -> cons.Point:
+        return self.posOuterLeftEyeCorner
 
-    def get_pos_right_eye_corner(self) -> cons.Point:
-        return self.posRightEyeCorner
+    def get_pos_outer_right_eye_corner(self) -> cons.Point:
+        return self.posOuterRightEyeCorner
+
+    def get_pos_inner_left_eye_corner(self) -> cons.Point:
+        return self.posInnerLeftEyeCorner
+
+    def get_pos_inner_right_eye_corner(self) -> cons.Point:
+        return self.posInnerRightEyeCorner
 
     def set_left_eye(self, eye: Eye):
         self.leftEye = eye
@@ -249,15 +259,35 @@ class Face:
         self.set_left_eye(Eye(self.img, pos_left_eye))
         self.set_right_eye(Eye(self.img, pos_right_eye))
 
-    def find_eye_vectors(self) -> (cons.Point, cons.Point):
+    def find_eye_vectors(self) -> cons.Point:
         if self.get_right_eye().get_pupil() and self.get_left_eye().get_pupil():
-            y_left = self.get_left_eye().get_pupil().get_global_position_center().y - self.get_pos_left_eye_corner().y
-            y_right = self.get_right_eye().get_pupil().get_global_position_center().y - \
-                self.get_pos_right_eye_corner().y
-            x_left = self.get_left_eye().get_pupil().get_global_position_center().x - self.get_pos_left_eye_corner().x
-            x_right = self.get_right_eye().get_pupil().get_global_position_center().x - \
-                self.get_pos_right_eye_corner().x
-            return cons.Point(x_left, y_left), cons.Point(x_right, y_right)
+            dist_left = self.get_pos_outer_left_eye_corner().eucledian_distance(self.get_pos_inner_left_eye_corner())
+            y_left_o = (self.get_left_eye().get_pupil().get_global_position_center().y -
+                        self.get_pos_outer_left_eye_corner().y)
+            y_left_i = (self.get_left_eye().get_pupil().get_global_position_center().y -
+                        self.get_pos_inner_left_eye_corner().y)
+            y_left = (y_left_i + y_left_o)/2
+
+            x_left_o = (self.get_left_eye().get_pupil().get_global_position_center().x -
+                        self.get_pos_outer_left_eye_corner().x)
+            x_left_i = (self.get_left_eye().get_pupil().get_global_position_center().x -
+                        self.get_pos_inner_left_eye_corner().x)
+            x_left = (x_left_o+x_left_i)/2
+
+            dist_right = self.get_pos_outer_right_eye_corner().eucledian_distance(self.get_pos_inner_right_eye_corner())
+            y_right_o = (self.get_right_eye().get_pupil().get_global_position_center().y -
+                         self.get_pos_outer_right_eye_corner().y)
+            y_right_i = (self.get_right_eye().get_pupil().get_global_position_center().y -
+                         self.get_pos_inner_right_eye_corner().y)
+            y_right = (y_right_i + y_right_o) / 2
+
+            x_right_o = (self.get_right_eye().get_pupil().get_global_position_center().x -
+                         self.get_pos_outer_right_eye_corner().x)
+            x_right_i = (self.get_right_eye().get_pupil().get_global_position_center().x -
+                         self.get_pos_inner_right_eye_corner().x)
+            x_right = (x_right_o + x_right_i) / 2
+            # TODO Normalization
+            return cons.Point((x_left + x_right)/2, (y_left + y_right)/2)
         return None
 
     # Attempt to get better y-results, but gave worse results

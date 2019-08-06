@@ -129,10 +129,8 @@ class Calibrate2points:
     def __init__(self, calibrate_screen: CalibrateScreen, face):
         self.calibrateScreen = calibrate_screen
         self.face = face
-        self.v_left_eye = list()
-        self.v_right_eye = list()
-        self.mean_left_eye = None
-        self.mean_right_eye = None
+        self.eye_vector = list()
+        self.mean_eye_vector = None
         self.main()
 
     def main(self):
@@ -141,54 +139,45 @@ class Calibrate2points:
 
     def update_calibrate(self, face: m.Face):
         self.face = face
-        if face.get_right_eye() and face.get_pos_right_eye_corner():
-            if face.get_left_eye() and face.get_pos_left_eye_corner():
+        if face.get_right_eye() and face.get_pos_outer_right_eye_corner():
+            if face.get_left_eye() and face.get_pos_outer_left_eye_corner():
                 self.find_vectors()
         if self.get_number_of_data() == cons.NUMBER_CALLIBRATE_DATA:
-            self.mean_left_eye, self.mean_right_eye = self.calculate_mean(self.v_left_eye, self.v_right_eye)
+            self.mean_eye_vector = self.calculate_mean(self.eye_vector)
 
     def get_calibrate_screen(self) -> CalibrateScreen:
         return self.calibrateScreen
 
-    def get_mean_v_left_eye(self) -> cons.Point:
-        return self.mean_left_eye
-
-    def get_mean_v_right_eye(self) -> cons.Point:
-        return self.mean_right_eye
+    def get_mean_eye_vector(self) -> cons.Point:
+        return self.mean_eye_vector
 
     def get_number_of_data(self) -> int:
-        return len(self.v_left_eye)
+        return len(self.eye_vector)
 
-    def update_vectors(self, v_left_eye: cons.Point, v_right_eye: cons.Point):
-        self.v_left_eye.append(v_left_eye)
-        self.v_right_eye.append(v_right_eye)
+    def update_vectors(self, vector_eye: cons.Point):
+        self.eye_vector.append(vector_eye)
 
     def find_vectors(self):
         if self.find_eye_vectors():
-            v_left_eye, v_right_eye = self.find_eye_vectors()
-            self.update_vectors(v_left_eye, v_right_eye)
+            vector = self.find_eye_vectors()
+            self.update_vectors(vector)
 
-    def find_eye_vectors(self) -> (cons.Point, cons.Point):
+    def find_eye_vectors(self) -> cons.Point:
         return self.face.find_eye_vectors()
 
-    def calculate_mean(self, list1: list, list2: list) -> (cons.Point, cons.Point):
+    def calculate_mean(self, list1: list) -> cons.Point:
         list1 = self.remove_outliers(list1)
-        list2 = self.remove_outliers(list2)
-        x1 = list()
-        x2 = list()
-        y1 = list()
-        y2 = list()
+        x = list()
+        y = list()
+        # split points into x and y coordinate
         for l in list1:
-            x1.append(l.x)
-            y1.append(l.y)
-        for l2 in list2:
-            x2.append(l2.x)
-            y2.append(l2.y)
-        x1_mean = np.mean(x1)
-        x2_mean = np.mean(x2)
-        y1_mean = np.mean(y1)
-        y2_mean = np.mean(y2)
-        return cons.Point(int(x1_mean), int(y1_mean)), cons.Point(int(x2_mean), int(y2_mean))
+            x.append(l.x)
+            y.append(l.y)
+        # calculate the average x and y
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+
+        return cons.Point(int(x_mean), int(y_mean))
 
     def remove_outliers(self, l: list) -> list:
         i = 0

@@ -20,20 +20,21 @@ AREA_RATIO_THRESHOLD = 0.18
 NUMBER_EYES = 25
 
 SIZE_EYE = 250
-RIGHT_EYE_HEIGHT = 0
-RIGHT_EYE_Y = 0
-LEFT_EYE_HEIGHT = 0
-LEFT_EYE_Y = 0
-
 
 class Point:
 
-    def __init__(self, x: int, y: int):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
 
     def get_distance_r0(self) -> float:
         return np.sqrt((np.square(self.x)+np.square(self.y)))
+
+    def eucledian_distance(self, point) -> float:
+        return np.sqrt((np.square((self.x-point.x))) + np.square((self.y-point.y)))
+
+    def add(self, point):
+        return Point(self.x + point.x, self.y + point.y)
 
     @property
     def to_string(self) -> str:

@@ -2,7 +2,6 @@
 # https://docs.opencv.org/3.4.3/d7/d8b/tutorial_py_face_detection.html
 import cv2
 import dlib
-import numpy as np
 
 import model as m
 import constants as cons
@@ -20,7 +19,6 @@ def main():
     test_case = 0
     enough_data_light_intensity = False  # Boolean to indicate the end of the calibration of the light threshold.
     cal_parameters = False  # Boolean to indicate whether calibration is started.
-    enough_data_pupil_specs = False
     screen_bool_test_system = False
     screen_parameters = False  # Boolean to indicate whether the calibrating screen for the light threshold is showed.
     screen_bool = False
@@ -73,34 +71,6 @@ def main():
                             screen.close_screen()
                             screen_parameters = False
                             cal_parameters = False
-                # Calibrate to set the pupil specifications, like the height
-                # TODO calibration
-                elif enough_data_pupil_specs is False:
-                    if face.get_left_eye().get_pupil() and face.get_right_eye().get_pupil():
-                        if screen_parameters is False:
-                            screen = create_calibrate_screen("calibrate pupil specs", 0.5)
-                            # show the calibrate screen
-                            view.show(screen.get_screen(), screen.get_name())
-                            screen_parameters = True
-                        # If calibration isn't started make a calibrating object
-                        elif cal_parameters is False:
-                            t = calibrate.CalibratePupilSpecs(face)
-                            cal_parameters = True
-                        else:
-                            # update the calibrating object
-                            t.update(face)
-                            # If enough data is collected:
-                            #           Set the pupil specs
-                            #           Close the window with the calibration screen
-                            if t.get_number_of_data() > 50:
-                                enough_data_pupil_specs = True
-                                cons.LEFT_EYE_HEIGHT = t.get_height_left_pupil()
-                                cons.LEFT_EYE_Y = t.get_y_left_pupil()
-                                cons.RIGHT_EYE_HEIGHT = t.get_height_right_pupil()
-                                cons.RIGHT_EYE_Y = t.get_y_right_pupil()
-                                screen.close_screen()
-                                screen_parameters = False
-                                cal_parameters = False
                 # Case to collect data with a LED as reference point to compare
                 # the data of the eye corner and pupil with
                 elif cons.REFERENCE:
@@ -118,20 +88,20 @@ def main():
                     if not cons.CALIBRATESCREEN_P1:
                         calibrate_p1 = create_calibrate(face, cons.CALIBRATE_P1_FACTOR, cons.NAME_CALIBRATE_WINDOW)
                         cons.CALIBRATESCREEN_P1 = True
-                    elif calibrate_p1.mean_left_eye is None:
+                    elif calibrate_p1.get_mean_eye_vector() is None:
                         calibrate_p1.update_calibrate(face)
                     elif not cons.CALIBRATESCREEN_P2:
                         calibrate_p1.close_screen()
                         calibrate_p2 = create_calibrate(face, cons.CALIBRATE_P2_FACTOR, cons.NAME_CALIBRATE_WINDOW)
                         cons.CALIBRATESCREEN_P2 = True
-                    elif calibrate_p2.mean_left_eye is None:
+                    elif calibrate_p2.get_mean_eye_vector() is None:
                         calibrate_p2.update_calibrate(face)
                     else:
                         calibrate_p2.close_screen()
-                        if calibrate_p1.get_mean_v_right_eye().x == calibrate_p2.get_mean_v_right_eye().x \
-                                or calibrate_p1.get_mean_v_right_eye().y == calibrate_p2.get_mean_v_right_eye().y \
-                                or calibrate_p1.get_mean_v_left_eye().x == calibrate_p2.get_mean_v_left_eye().x \
-                                or calibrate_p1.get_mean_v_left_eye().y == calibrate_p2.get_mean_v_left_eye().y:
+
+                        if int(calibrate_p1.get_mean_eye_vector().x) == int(calibrate_p2.get_mean_eye_vector().x)\
+                                or int(calibrate_p1.get_mean_eye_vector().y) == \
+                                int(calibrate_p2.get_mean_eye_vector().y):
                             cons.CALIBRATESCREEN_P1 = False
                             calibrate_p1 = None
                             cons.CALIBRATESCREEN_P2 = False
@@ -228,48 +198,34 @@ def create_calibrate(face: m.Face, factor: float, name: str):
 
 def map_eyes2screen(faces: list, cal1: calibrate.Calibrate2points, cal2: calibrate.Calibrate2points) -> \
         (cons.Point, int, int):
-    # TODO try method using inner and outer eye-corner
-    x_right, y_right = 0, 0
-    x_left, y_left = 0, 0
+    x, y = 0, 0
     # Sum of the coordinates of the different faces
     for face in faces:
-        left_eye_vector, right_eye_vector = face.find_eye_vectors()
+        vector = face.find_eye_vectors()
 
-        x_right += right_eye_vector.x
-        y_right += right_eye_vector.y
-        x_left += left_eye_vector.x
-        y_left += left_eye_vector.y
+        x += vector.x
+        y += vector.y
 
     # Mean value of the coordinates
-    x_right_mean = x_right/len(faces)
-    y_right_mean = y_right/len(faces)
-    x_left_mean = x_left / len(faces)
-    y_left_mean = y_left / len(faces)
+    x_mean = x/len(faces)
+    y_mean = y/len(faces)
 
     # position of the point on the screen during the calibration
     p1 = cal1.get_calibrate_screen().get_position_point()
     p2 = cal2.get_calibrate_screen().get_position_point()
 
-    # position on the screen according to the left eye
-    alpha_left = interpolate(x_left_mean, cal1.get_mean_v_left_eye().x, cal2.get_mean_v_left_eye().x, p1.x, p2.x)
-    beta_left = interpolate(y_left_mean, cal1.get_mean_v_left_eye().y, cal2.get_mean_v_left_eye().y, p1.y, p2.y)
-
-    # position on the screen according to the right eye
-    alpha_right = interpolate(x_right_mean, cal1.get_mean_v_right_eye().x, cal2.get_mean_v_right_eye().x, p1.x, p2.x)
-    beta_right = interpolate(y_right_mean, cal1.get_mean_v_right_eye().y, cal2.get_mean_v_right_eye().y, p1.y, p2.y)
-
     # mean position for the two eyes
-    alpha = int((alpha_left + alpha_right)/2)
-    beta = int((beta_left + beta_right)/2)
+    alpha = interpolate(x_mean, cal1.get_mean_eye_vector().x, cal2.get_mean_eye_vector().x, p1.x, p2.x)
+    beta = interpolate(y_mean, cal1.get_mean_eye_vector().y, cal2.get_mean_eye_vector().y, p1.y, p2.y)
 
     # Decide which part of the screen is been looked
     center = find_screen_area(alpha, beta)
     return center, alpha, beta
 
 
-def interpolate(x: float, x1: int, x2: int, a1: int, a2: int) -> int:
+def interpolate(x: float, x1: int, x2: int, a1: int, a2: int) -> float:
     a = a1 + (x - x1)*(a2 - a1) / (x2 - x1)
-    return int(a)
+    return a
 
 
 def find_screen_area(x: float, y: float) -> cons.Point:
@@ -331,7 +287,7 @@ def collect_data():
 
         # Show the different calibrate screens
         if not cons.CALIBRATESCREEN_P1:
-            screen = create_calibrate_screen(0.125*(1+3*case))
+            screen = create_calibrate_screen("Pupil Threshold", 0.125*(1+3*case))
             view.show(screen.get_screen(), "SCREEN")
             cons.CALIBRATESCREEN_P1 = True
             num, n = count_data(num, n)
