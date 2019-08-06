@@ -29,7 +29,7 @@ def draw_eye_pupils(img: np.ndarray, face: c.Face):
     c_l = face.get_left_eye().getPupil().getGlobalPosition()
     cv2.circle(img, (c_l.x, c_l.y), cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
 
-    c_r = face.get_right_eye().get_pupil().get_global_position()
+    c_r = face.get_right_eye().get_pupil().get_global_position_center()
     cv2.circle(img, (c_r.x, c_r.y), cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
 
 

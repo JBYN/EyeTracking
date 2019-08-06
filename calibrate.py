@@ -45,7 +45,7 @@ class CalibrateLightIntensity:
         self.main()
 
     def get_threshold(self) -> float:
-        return np.mean(self.values_threshold)
+        return float(np.mean(self.values_threshold))
 
     def get_number_of_data(self) -> int:
         return len(self.values_threshold)
@@ -81,8 +81,51 @@ class CalibrateLightIntensity:
         return None
 
 
-class Calibrate:
+class CalibratePupilSpecs:
+    def __init__(self, face: m.Face):
+        self.face = face
+        self.values_y_left_pupil = list()
+        self.values_y_right_pupil = list()
+        self.heights_left_pupil = list()
+        self.heights_right_pupil = list()
+        self.main()
 
+    def main(self):
+        specs_left_pupil, specs_right_pupil = self.find_specs()
+        self.update_lists(specs_left_pupil, specs_right_pupil)
+
+    def update(self, face):
+        self.face = face
+        self.main()
+
+    def update_lists(self, specs_left_pupil, specs_right_pupil):
+        self.heights_left_pupil.append(specs_left_pupil.height)
+        self.values_y_left_pupil.append(specs_left_pupil.y)
+        self.heights_right_pupil.append(specs_right_pupil.height)
+        self.values_y_right_pupil.append(specs_right_pupil.y)
+
+    def get_number_of_data(self) -> int:
+        return len(self.values_y_left_pupil)
+
+    def get_y_left_pupil(self) -> float:
+        return float(np.mean(self.values_y_left_pupil))
+
+    def get_height_left_pupil(self) -> float:
+        return float(np.mean(self.heights_left_pupil))
+
+    def get_y_right_pupil(self) -> float:
+        return float(np.mean(self.values_y_right_pupil))
+
+    def get_height_right_pupil(self) -> float:
+        return float(np.mean(self.heights_right_pupil))
+
+    def find_specs(self) -> (m.Rectangle, m.Rectangle):
+        right_pupil = self.face.get_right_eye().get_pupil().get_global_roi()
+        left_pupil = self.face.get_left_eye().get_pupil().get_global_roi()
+        return left_pupil, right_pupil
+
+
+class Calibrate2points:
     def __init__(self, calibrate_screen: CalibrateScreen, face):
         self.calibrateScreen = calibrate_screen
         self.face = face

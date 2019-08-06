@@ -19,9 +19,10 @@ def main():
     test_system = list()
     test_case = 0
     enough_data_light_intensity = False  # Boolean to indicate the end of the calibration of the light threshold.
-    cal_light_intensity = False  # Boolean to indicate whether calibration is started.
+    cal_parameters = False  # Boolean to indicate whether calibration is started.
+    enough_data_pupil_specs = False
     screen_bool_test_system = False
-    screen_light_threshold = False  # Boolean to indicate whether the calibrating screen for the light threshold is showed.
+    screen_parameters = False  # Boolean to indicate whether the calibrating screen for the light threshold is showed.
     screen_bool = False
     prev_face = False  # Boolean to indicate whether a face was already found are not.
     print("START")
@@ -51,27 +52,55 @@ def main():
                 # Calibrate
                 # First calibrate to know the light intensity
                 if enough_data_light_intensity is False:
-                    if screen_light_threshold is False:
+                    if screen_parameters is False:
                         screen = create_calibrate_screen("calibrate light intensity", 0.5)
                         # show the calibrate screen
                         view.show(screen.get_screen(), screen.get_name())
-                        screen_light_threshold = True
+                        screen_parameters = True
                     # If calibration isn't started make a calibrating object
-                    elif cal_light_intensity is False:
+                    elif cal_parameters is False:
                         t = calibrate.CalibrateLightIntensity(face)
-                        cal_light_intensity = True
+                        cal_parameters = True
                     else:
                         # update the calibrating object
                         t.update(face)
+                        # If enough data is collected:
+                        #           Set the "LIGHT_INTENSITY_THRESHOLD"
+                        #           Close the window with the calibration screen
                         if t.get_number_of_data() > 50:
                             enough_data_light_intensity = True
-                # If the calibration screen for the light intensity is still showed:
-                #       Set the "LIGHT_INTENSITY_THRESHOLD"
-                #       Close the window with the calibration screen
-                elif screen_light_threshold:
-                    cons.LIGHT_INTENSITY_THRESHOLD = t.get_threshold()
-                    screen.close_screen()
-                    screen_light_threshold = False
+                            cons.LIGHT_INTENSITY_THRESHOLD = t.get_threshold()
+                            screen.close_screen()
+                            screen_parameters = False
+                            cal_parameters = False
+                # Calibrate to set the pupil specifications, like the height
+                # TODO calibration
+                elif enough_data_pupil_specs is False:
+                    if face.get_left_eye().get_pupil() and face.get_right_eye().get_pupil():
+                        if screen_parameters is False:
+                            screen = create_calibrate_screen("calibrate pupil specs", 0.5)
+                            # show the calibrate screen
+                            view.show(screen.get_screen(), screen.get_name())
+                            screen_parameters = True
+                        # If calibration isn't started make a calibrating object
+                        elif cal_parameters is False:
+                            t = calibrate.CalibratePupilSpecs(face)
+                            cal_parameters = True
+                        else:
+                            # update the calibrating object
+                            t.update(face)
+                            # If enough data is collected:
+                            #           Set the pupil specs
+                            #           Close the window with the calibration screen
+                            if t.get_number_of_data() > 50:
+                                enough_data_pupil_specs = True
+                                cons.LEFT_EYE_HEIGHT = t.get_height_left_pupil()
+                                cons.LEFT_EYE_Y = t.get_y_left_pupil()
+                                cons.RIGHT_EYE_HEIGHT = t.get_height_right_pupil()
+                                cons.RIGHT_EYE_Y = t.get_y_right_pupil()
+                                screen.close_screen()
+                                screen_parameters = False
+                                cal_parameters = False
                 # Case to collect data with a LED as reference point to compare
                 # the data of the eye corner and pupil with
                 elif cons.REFERENCE:
@@ -123,7 +152,6 @@ def main():
                                                 view.show(screen.get_screen(), screen.get_name())
                                                 screen_bool_test_system = True
                                             else:
-                                                # TODO check results for the mean of some faces
                                                 faces.append(face)
                                                 area, x, y = map_eyes2screen(faces, calibrate_p1, calibrate_p2)
                                                 if area:
@@ -194,11 +222,13 @@ def create_calibrate_screen(name: str, factor_x: float, factor_y=None) -> calibr
 
 def create_calibrate(face: m.Face, factor: float, name: str):
     calibrate_screen = create_calibrate_screen(name, factor)
-    calibrate_p = calibrate.Calibrate(calibrate_screen, face)
+    calibrate_p = calibrate.Calibrate2points(calibrate_screen, face)
     return calibrate_p
 
 
-def map_eyes2screen(faces: list, cal1: calibrate.Calibrate, cal2: calibrate.Calibrate) -> (cons.Point, int, int):
+def map_eyes2screen(faces: list, cal1: calibrate.Calibrate2points, cal2: calibrate.Calibrate2points) -> \
+        (cons.Point, int, int):
+    # TODO try method using inner and outer eye-corner
     x_right, y_right = 0, 0
     x_left, y_left = 0, 0
     # Sum of the coordinates of the different faces
@@ -223,11 +253,11 @@ def map_eyes2screen(faces: list, cal1: calibrate.Calibrate, cal2: calibrate.Cali
     # position on the screen according to the left eye
     alpha_left = interpolate(x_left_mean, cal1.get_mean_v_left_eye().x, cal2.get_mean_v_left_eye().x, p1.x, p2.x)
     beta_left = interpolate(y_left_mean, cal1.get_mean_v_left_eye().y, cal2.get_mean_v_left_eye().y, p1.y, p2.y)
-    print(str(alpha_left) + "," + str(beta_left))
+
     # position on the screen according to the right eye
     alpha_right = interpolate(x_right_mean, cal1.get_mean_v_right_eye().x, cal2.get_mean_v_right_eye().x, p1.x, p2.x)
     beta_right = interpolate(y_right_mean, cal1.get_mean_v_right_eye().y, cal2.get_mean_v_right_eye().y, p1.y, p2.y)
-    print(str(alpha_right) + "," + str(beta_right))
+
     # mean position for the two eyes
     alpha = int((alpha_left + alpha_right)/2)
     beta = int((beta_left + beta_right)/2)

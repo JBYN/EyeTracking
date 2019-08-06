@@ -42,16 +42,26 @@ class Rectangle:
 
 class EyePupil:
 
-    def __init__(self, pos_eye: cons.Point, center_pupil: cons.Point):
-        self.posPupil = center_pupil
+    def __init__(self, pos_eye: cons.Point, region_pupil: Rectangle):
+        self.posPupil = region_pupil
         self.posEye = pos_eye
-        self.globalPosition = cons.Point(center_pupil.x + pos_eye.x, center_pupil.y + pos_eye.y)
+        self.globalPosition = cons.Point(self.get_center().x + self.posEye.x, self.get_center().y + self.posEye.y)
+        self.globalROI = Rectangle(region_pupil.x + pos_eye.x, region_pupil.y + pos_eye.y, region_pupil.get_width(),
+                                   region_pupil.get_height())
 
-    def get_pos_eye_center(self) -> cons.Point:
+    def get_center(self) -> cons.Point:
+        x = (self.posPupil.x + self.posPupil.width)/2
+        y = (self.posPupil.y + self.posPupil.height)/2
+        return cons.Point(int(x), int(y))
+
+    def get_roi(self) -> Rectangle:
         return self.posPupil
 
-    def get_global_position(self) -> cons.Point:
+    def get_global_position_center(self) -> cons.Point:
         return self.globalPosition
+
+    def get_global_roi(self) -> Rectangle:
+        return self.globalROI
 
 
 class Eye:
@@ -103,9 +113,7 @@ class Eye:
             for cnt in contours:
                 print("PUPIL_DETECTED")
                 (x, y, w, h) = cv2.boundingRect(cnt)
-                # TODO check the difference between the width and the height
-                self.eyePupil = EyePupil(self.get_pos_eye().get_upper_left_corner(),
-                                         cons.Point(int(x + w / 2), int(y + h / 2)))
+                self.eyePupil = EyePupil(self.get_pos_eye().get_upper_left_corner(), Rectangle(x, y, w, h))
                 print("height: " + str(h) + "; width: " + str(w))
                 # collect data to set threshold for light intensity
                 if cons.COLLECT_DATA:
@@ -113,7 +121,7 @@ class Eye:
                     cons.size_eye.append(size)
                     copy_eye = copy.deepcopy(self.roiEye)
                     a = cv2.circle(copy_eye,
-                                   (self.eyePupil.get_pos_eye_center().x, self.eyePupil.get_pos_eye_center().y),
+                                   (self.eyePupil.get_center().x, self.eyePupil.get_center().y),
                                    cons.RADIUS_PUPIL_IND, cons.COLOR_PUPIL_IND)
                     # cv2.namedWindow("IRIS_Threshold", cv2.WND_PROP_FULLSCREEN)
                     # cv2.setWindowProperty("IRIS_Threshold", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -164,8 +172,8 @@ class Face:
                 led_detected = detect_led(crop)
                 if led_detected and self.leftEye and self.rightEye:
                     if self.leftEye.get_pupil() and self.rightEye.get_pupil():
-                        cons.pupil_position.append(self.leftEye.get_pupil().get_global_position().to_string)
-                        cons.pupil_position.append(self.rightEye.get_pupil().get_global_position().to_string)
+                        cons.pupil_position.append(self.leftEye.get_pupil().get_global_position_center().to_string)
+                        cons.pupil_position.append(self.rightEye.get_pupil().get_global_position_center().to_string)
                         cons.led_position.append(led_detected.to_string)
                         cons.led_position.append(led_detected.to_string)
                         cons.corner_position.append(self.posLeftEyeCorner.to_string)
@@ -242,14 +250,46 @@ class Face:
         self.set_right_eye(Eye(self.img, pos_right_eye))
 
     def find_eye_vectors(self) -> (cons.Point, cons.Point):
-        # Check whether the pupils are detected
         if self.get_right_eye().get_pupil() and self.get_left_eye().get_pupil():
-            x_left = self.get_left_eye().get_pupil().get_global_position().x - self.get_pos_left_eye_corner().x
-            y_left = self.get_left_eye().get_pupil().get_global_position().y - self.get_pos_left_eye_corner().y
-            x_right = self.get_right_eye().get_pupil().get_global_position().x - self.get_pos_right_eye_corner().x
-            y_right = self.get_right_eye().get_pupil().get_global_position().y - self.get_pos_right_eye_corner().y
+            y_left = self.get_left_eye().get_pupil().get_global_position_center().y - self.get_pos_left_eye_corner().y
+            y_right = self.get_right_eye().get_pupil().get_global_position_center().y - \
+                self.get_pos_right_eye_corner().y
+            x_left = self.get_left_eye().get_pupil().get_global_position_center().x - self.get_pos_left_eye_corner().x
+            x_right = self.get_right_eye().get_pupil().get_global_position_center().x - \
+                self.get_pos_right_eye_corner().x
             return cons.Point(x_left, y_left), cons.Point(x_right, y_right)
         return None
+
+    # Attempt to get better y-results, but gave worse results
+    # def find_eye_vectors(self) -> (cons.Point, cons.Point):
+    #     # Check whether the pupils are detected
+    #     if self.get_right_eye().get_pupil() and self.get_left_eye().get_pupil():
+    #         if self.get_left_eye().get_pupil().get_global_roi().get_upper_left_corner().y < cons.LEFT_EYE_Y:
+    #             y_left = self.get_left_eye().get_pupil().get_global_roi().get_upper_left_corner().y + \
+    #                      self.get_left_eye().get_pupil().get_global_roi().get_height() - cons.LEFT_EYE_HEIGHT/2
+    #         elif self.get_left_eye().get_pupil().get_global_roi().get_upper_left_corner().y > cons.LEFT_EYE_Y:
+    #             y_left = self.get_left_eye().get_pupil().get_global_roi().get_upper_left_corner().y + \
+    #                      cons.LEFT_EYE_HEIGHT/2
+    #         else:
+    #             y_left = self.get_left_eye().get_pupil().get_global_position_center().y - \
+    #                      self.get_pos_left_eye_corner().y
+    #
+    #         if self.get_right_eye().get_pupil().get_global_roi().get_upper_left_corner().y < cons.RIGHT_EYE_Y:
+    #             y_right = self.get_right_eye().get_pupil().get_global_roi().get_upper_left_corner().y + \
+    #                      self.get_right_eye().get_pupil().get_global_roi().get_height() - cons.RIGHT_EYE_HEIGHT/2
+    #         elif self.get_right_eye().get_pupil().get_global_roi().get_upper_left_corner().y > cons.RIGHT_EYE_Y:
+    #             y_right = self.get_right_eye().get_pupil().get_global_roi().get_upper_left_corner().y + \
+    #                      cons.RIGHT_EYE_HEIGHT/2
+    #         else:
+    #             y_right = self.get_right_eye().get_pupil().get_global_position_center().y - \
+    #                      self.get_pos_right_eye_corner().y
+    #
+    #         x_left = self.get_left_eye().get_pupil().get_global_position_center().x - self.get_pos_left_eye_corner().x
+    #         x_right = self.get_right_eye().get_pupil().get_global_position_center().x - \
+    #             self.get_pos_right_eye_corner().x
+    #
+    #         return cons.Point(x_left, y_left), cons.Point(x_right, y_right)
+    #     return None
 
 
 def detect_led(face: np.ndarray) -> cons.Point:
