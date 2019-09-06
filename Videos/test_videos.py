@@ -95,6 +95,7 @@ class Screen:
     def update_screen(self, positions: list):
         self.set_pos(positions)
         self.set_current_pos(self.get_positions().__getitem__(0))
+        self.get_circle().update(color="red")
         self.update_canvas()
         self.draw_circle()
 
@@ -135,6 +136,7 @@ class Screen:
             self.change_color_circle(event, "red")
         elif self.get_circle().get_tag() == "calibrate":
             position.append("End of calibration \n")
+            event.widget.delete(self.get_circle().get_tag())
             self.get_circle().update(tag="test")
             w = event.widget.winfo_screenwidth()
             h = event.widget.winfo_screenheight()
@@ -143,8 +145,8 @@ class Screen:
                    (3*w/8, 7*h/8), (w/8, 5*h/8), (5*w/8, h/8), (7*w/8, 3*h/8)]
             self.update_screen(pos)
         else:
-            # self.write_data()
             self.get_root().destroy()
+            self.write_data()
 
     def draw_circle(self):
         x = self.get_current_pos()[0]
@@ -157,11 +159,11 @@ class Screen:
     @staticmethod
     def write_data():
         index = 0
-        f = open("Videos/pos.csv", "w+")
+        f = open("pos.csv", "w+")
         f.write("X;Y \n")
         for im in images:
             f.write(str(position.__getitem__(index)[0]) + ";" + str(position.__getitem__(index)[1]) + "\n")
-            cv2.imwrite("Videos/Images/im_" + str(index) + ".jpg", im)
+            cv2.imwrite("Images/im_" + str(index) + ".jpg", im)
             index += 1
         f.close()
 
