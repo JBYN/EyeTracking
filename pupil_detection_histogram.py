@@ -7,7 +7,7 @@ path = "Videos/Video1/Calibration/"
 
 # load images of the eyes
 img = glob.glob(path + "LeftEyes/*.jpg")
-img.sort()
+img.sort(key=len)
 img = [cv2.imread(i, 0) for i in img]
 
 # load left upper corner of the images
@@ -102,7 +102,7 @@ for i in img:
     index += 1
 
 # write the vectors to a file
-f = open(path + "LeftEyes/vectors.csv", "w+")
+f = open(path + "LeftEyes/Method_1/vectors.csv", "w+")
 for v in vectors:
     f.write(str(v) + "\n")
 f.close()

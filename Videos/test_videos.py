@@ -1,17 +1,31 @@
+from tkinter import filedialog
 from tkinter import *
 import cv2
 import time
+import os
+import copy
 
 global r
 r = 5
 
+
 CAM = cv2.VideoCapture(0)
 images = list()
+images_c = list()
+images_t = list()
 position = list()
+position_c = list()
+position_t = list()
 
 
 def main():
     root = Tk()
+    root.withdraw()
+    root.fileName = filedialog.askdirectory()
+    global path
+    path = root.fileName
+    root.deiconify()
+
     w = root.winfo_screenwidth()
     h = root.winfo_screenheight()
     config_main_window(root, w, h, "Main Window")
@@ -119,23 +133,28 @@ class Screen:
         self.get_root().update()
 
     def on_click_handler(self, event):
-        i = 0
         t = time.time()
         self.change_color_circle(event, "black")
         t2 = time.time()
         while (t2 - t) < 5:
+            global images
+            global position
             b, img = CAM.read()
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             images.append(gray)
             position.append((self.get_current_pos()[0], self.get_current_pos()[1]))
             t2 = time.time()
-            i += 1
 
         if self.get_positions().__len__() > 1:
             self.move_circle()
             self.change_color_circle(event, "red")
         elif self.get_circle().get_tag() == "calibrate":
-            position.append("End of calibration \n")
+            global images_c
+            global position_c
+            images_c = copy.deepcopy(images)
+            position_c = copy.deepcopy(position)
+            images.clear()
+            position.clear()
             event.widget.delete(self.get_circle().get_tag())
             self.get_circle().update(tag="test")
             w = event.widget.winfo_screenwidth()
@@ -145,8 +164,16 @@ class Screen:
                    (3*w/8, 7*h/8), (w/8, 5*h/8), (5*w/8, h/8), (7*w/8, 3*h/8)]
             self.update_screen(pos)
         else:
+            global position_t
+            global images_t
+            position_t = copy.deepcopy(position)
+            images_t = copy.deepcopy(images)
+            images.clear()
+            position.clear()
+            self.get_root().withdraw()
+            self.write_data(images_c, position_c, "Calibration")
+            self.write_data(images_t, position_t, "Test")
             self.get_root().destroy()
-            self.write_data()
 
     def draw_circle(self):
         x = self.get_current_pos()[0]
@@ -157,13 +184,18 @@ class Screen:
                                       outline=self.get_circle().get_color())
 
     @staticmethod
-    def write_data():
+    def write_data(imgs: list, pos: list, directory: str):
         index = 0
-        f = open("pos.csv", "w+")
+        global path
+        p = path + "/" + directory
+        d = os.path.join(p)
+        if not os.path.exists(d):
+            os.mkdir(d)
+        f = open(p + "/pos.csv", "w+")
         f.write("X;Y \n")
-        for im in images:
-            f.write(str(position.__getitem__(index)[0]) + ";" + str(position.__getitem__(index)[1]) + "\n")
-            cv2.imwrite("Images/im_" + str(index) + ".jpg", im)
+        for im in imgs:
+            f.write(str(pos.__getitem__(index)[0]) + ";" + str(pos.__getitem__(index)[1]) + "\n")
+            cv2.imwrite(p + "/im_" + str(index) + ".jpg", im)
             index += 1
         f.close()
 

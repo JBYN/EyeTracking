@@ -52,9 +52,9 @@ def main():
     for a in eye_corners:
         f.write(str(a) + "\n")
         p.write(str(pos_eyes.__getitem__(i+2)) + "\n")
-        if i >= 0:
-            cv2.imwrite("Video4/Calibration/LeftEyes/" + str(i) + ".jpg", left_eyes.__getitem__(i))
-            cv2.imwrite("Video4/Calibration/RightEyes/" + str(i) + ".jpg", right_eyes.__getitem__(i))
+        # if i >= 0:
+        #     cv2.imwrite("Video1/Calibration/LeftEyes/" + str(i) + ".jpg", left_eyes.__getitem__(i))
+        #     cv2.imwrite("Video1/Calibration/RightEyes/" + str(i) + ".jpg", right_eyes.__getitem__(i))
         i += 1
     f.close()
     p.close()
@@ -65,7 +65,7 @@ def init():
     FACEMARK_PREDICTOR = dlib.shape_predictor("data/shape_predictor_68_face_landmarks.dat")
 
     img = glob.glob("Video4/Calibration/*.jpg")
-    img.sort()
+    img.sort(key=len)
     img = [cv2.imread(i) for i in img]
     return FACE_CASCADE, FACEMARK_PREDICTOR, img
 
