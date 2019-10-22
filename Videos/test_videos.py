@@ -30,8 +30,9 @@ def main():
     h = root.winfo_screenheight()
     config_main_window(root, w, h, "Main Window")
     circle = Circle(r, "red", "calibrate")
-    pos = [(w/6, h/6), (5*w/6, 5*h/6), (5*w/6, h/2), (w/2, h/6), (w/2, 5*h/6), (w/6, h/2), (5*w/6, h/6), (w/6, 5*h/6),
-           (w/2, h/2)]
+    # pos = [(w/6, h/6), (5*w/6, 5*h/6), (5*w/6, h/2), (w/2, h/6), (w/2, 5*h/6), (w/6, h/2), (5*w/6, h/6), (w/6, 5*h/6),
+    #        (w/2, h/2)]
+    pos = [(w/2, h/2), (w/2, h/2), (w/2, h/2)]
     screen = Screen(root, w, h, circle, pos)
     root.mainloop()
 
@@ -148,32 +149,53 @@ class Screen:
         if self.get_positions().__len__() > 1:
             self.move_circle()
             self.change_color_circle(event, "red")
-        elif self.get_circle().get_tag() == "calibrate":
-            global images_c
-            global position_c
-            images_c = copy.deepcopy(images)
-            position_c = copy.deepcopy(position)
-            images.clear()
-            position.clear()
-            event.widget.delete(self.get_circle().get_tag())
-            self.get_circle().update(tag="test")
-            w = event.widget.winfo_screenwidth()
-            h = event.widget.winfo_screenheight()
-            pos = [(w/8, h/8), (3*w/8, 5*h/8), (5*w/8, 3*h/8), (7*w/8, 7*h/8), (7*w/8, h/8), (5*w/8, 5*h/8),
-                   (3*w/8, 3*h/8), (w/8, 7*h/8), (5*w/8, 7*h/8), (w/8, 3*h/8), (3*w/8, h/8), (7*w/8, 5*h/8),
-                   (3*w/8, 7*h/8), (w/8, 5*h/8), (5*w/8, h/8), (7*w/8, 3*h/8)]
-            self.update_screen(pos)
         else:
-            global position_t
-            global images_t
-            position_t = copy.deepcopy(position)
-            images_t = copy.deepcopy(images)
-            images.clear()
-            position.clear()
             self.get_root().withdraw()
-            self.write_data(images_c, position_c, "Calibration")
-            self.write_data(images_t, position_t, "Test")
+            self.write_data(images, position, "Calibration")
+
             self.get_root().destroy()
+    # def on_click_handler(self, event):
+    #     t = time.time()
+    #     self.change_color_circle(event, "black")
+    #     t2 = time.time()
+    #     while (t2 - t) < 5:
+    #         global images
+    #         global position
+    #         b, img = CAM.read()
+    #         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #         images.append(gray)
+    #         position.append((self.get_current_pos()[0], self.get_current_pos()[1]))
+    #         t2 = time.time()
+    #
+    #     if self.get_positions().__len__() > 1:
+    #         self.move_circle()
+    #         self.change_color_circle(event, "red")
+    #     elif self.get_circle().get_tag() == "calibrate":
+    #         global images_c
+    #         global position_c
+    #         images_c = copy.deepcopy(images)
+    #         position_c = copy.deepcopy(position)
+    #         images.clear()
+    #         position.clear()
+    #         event.widget.delete(self.get_circle().get_tag())
+    #         self.get_circle().update(tag="test")
+    #         w = event.widget.winfo_screenwidth()
+    #         h = event.widget.winfo_screenheight()
+    #         pos = [(w/8, h/8), (3*w/8, 5*h/8), (5*w/8, 3*h/8), (7*w/8, 7*h/8), (7*w/8, h/8), (5*w/8, 5*h/8),
+    #                (3*w/8, 3*h/8), (w/8, 7*h/8), (5*w/8, 7*h/8), (w/8, 3*h/8), (3*w/8, h/8), (7*w/8, 5*h/8),
+    #                (3*w/8, 7*h/8), (w/8, 5*h/8), (5*w/8, h/8), (7*w/8, 3*h/8)]
+    #         self.update_screen(pos)
+    #     else:
+    #         global position_t
+    #         global images_t
+    #         position_t = copy.deepcopy(position)
+    #         images_t = copy.deepcopy(images)
+    #         images.clear()
+    #         position.clear()
+    #         self.get_root().withdraw()
+    #         self.write_data(images_c, position_c, "Calibration")
+    #         self.write_data(images_t, position_t, "Test")
+    #         self.get_root().destroy()
 
     def draw_circle(self):
         x = self.get_current_pos()[0]
